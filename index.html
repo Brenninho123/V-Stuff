@@ -4,6 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>V Stuff — Psych to V-Slice Converter</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#121118">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="V Stuff">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="description" content="Converts Psych Engine charts, characters, and stages to V-Slice format.">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -74,6 +87,19 @@
     line-height: 1.5;
     margin: 0;
   }
+
+  #installBtn {
+    display: none;
+    margin-top: 18px;
+    font-size: 14px;
+    padding: 9px 16px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+  }
+
+  #installBtn.visible { display: inline-flex; align-items: center; gap: 8px; }
+
+  #installBtn .dot { background: var(--green); }
 
   .page-nav {
     display: flex;
@@ -309,6 +335,7 @@
   <div class="eyebrow">V Stuff</div>
   <h1>Psych <span class="arrow">&#8594;</span> V-Slice</h1>
   <p>Converts a Psych Engine chart into the V-Slice chart and metadata format. Paste or upload a chart, fill in what Psych doesn't store, and get both output files.</p>
+  <button id="installBtn" type="button"><span class="dot"></span>Install app</button>
 </header>
 
 <nav class="page-nav">
@@ -558,6 +585,34 @@
 </main>
 
 <script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function () {});
+  });
+}
+
+var deferredInstallPrompt = null;
+var installBtn = document.getElementById('installBtn');
+
+window.addEventListener('beforeinstallprompt', function (e) {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  installBtn.classList.add('visible');
+});
+
+installBtn.addEventListener('click', function () {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  deferredInstallPrompt.userChoice.finally(function () {
+    deferredInstallPrompt = null;
+    installBtn.classList.remove('visible');
+  });
+});
+
+window.addEventListener('appinstalled', function () {
+  installBtn.classList.remove('visible');
+});
+
 var lastResult = null;
 var activeTab = 'chart';
 
