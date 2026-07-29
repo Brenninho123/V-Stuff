@@ -314,6 +314,7 @@
 <nav class="page-nav">
   <button id="navCharts" class="active" type="button"><span class="dot"></span>Charts</button>
   <button id="navCharacters" type="button"><span class="dot"></span>Characters</button>
+  <button id="navStages" type="button"><span class="dot"></span>Stages</button>
 </nav>
 
 <main id="chartsPage" class="page active">
@@ -476,6 +477,82 @@
     <div class="notes-info">
       <strong>Field mapping</strong> — each animation's <code>anim</code> becomes <code>name</code>, its atlas <code>name</code> becomes <code>prefix</code>, <code>loop</code> becomes <code>looped</code>, and per-animation <code>offsets</code> carry over exactly (no shared default is assumed). An animation whose id contains "death" is renamed to <code>firstDeath</code>/<code>deathLoop</code>/<code>deathConfirm</code> and a <code>death</code> block is added — Psych usually only has one death animation, so you'll likely need to create the loop/confirm states yourself.<br><br>
       <strong>Not carried over</strong> — <code>position</code> (belongs in the stage file, not the character), <code>healthicon</code> / <code>healthbar_colors</code> (no field in this schema), <code>no_antialiasing</code>, <code>scale</code>, <code>sing_duration</code>, <code>vocals_file</code>. Set these directly in the output if your fork supports them.
+    </div>
+  </section>
+</main>
+
+<main id="stagesPage" class="page">
+  <section class="panel">
+    <h2><span class="tag from">FROM</span> Psych Engine</h2>
+    <p class="sub">Stage JSON gives positions and camera offsets directly. The Lua script is optional — if you paste it, background props get pulled out of the <code>makeLuaSprite</code> / <code>addLuaSprite</code> calls, best-effort.</p>
+
+    <label class="first">Stage JSON</label>
+    <div class="file-drop">
+      <span id="stageFileLabel">No file selected</span>
+      <button id="stageFileBtn" type="button">Upload .json</button>
+      <input type="file" id="stageFileInput" accept="application/json,.json">
+    </div>
+    <textarea id="stageInput" placeholder="{ &quot;directory&quot;: &quot;week1&quot;, &quot;boyfriend&quot;: [990,100], ... }" spellcheck="false" style="margin-top:10px;"></textarea>
+
+    <label class="first">Stage Lua (optional, for props)</label>
+    <div class="file-drop">
+      <span id="luaFileLabel">No file selected</span>
+      <button id="luaFileBtn" type="button">Upload .lua</button>
+      <input type="file" id="luaFileInput" accept=".lua,text/plain">
+    </div>
+    <textarea id="luaInput" placeholder="function onCreate()&#10;  makeLuaSprite('bg', 'week1/bg', 0, 0)&#10;  addLuaSprite('bg')&#10;end" spellcheck="false" style="margin-top:10px; height:160px;"></textarea>
+
+    <label class="first">Metadata Psych doesn't store</label>
+    <div class="field-row">
+      <div>
+        <label class="first">Display name</label>
+        <input type="text" id="stageName" placeholder="Main Stage">
+      </div>
+      <div>
+        <label class="first">Pixel stage</label>
+        <select id="stageIsPixel">
+          <option value="auto">Auto (from isPixelStage)</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div>
+        <label class="first">BF zIndex</label>
+        <input type="text" id="stageBfZ" placeholder="300">
+      </div>
+      <div>
+        <label class="first">Dad zIndex</label>
+        <input type="text" id="stageDadZ" placeholder="200">
+      </div>
+    </div>
+    <label class="first">GF zIndex</label>
+    <input type="text" id="stageGfZ" placeholder="100">
+
+    <button id="stageConvertBtn" type="button">Convert stage</button>
+    <div id="stageStatus"></div>
+  </section>
+
+  <section class="panel">
+    <h2><span class="tag to">TO</span> V-Slice</h2>
+    <p class="sub">One stage.json — background props plus character positions and camera offsets.</p>
+
+    <div id="stageOutputWrap">
+      <div class="empty-state">Convert a stage to see the output here.</div>
+    </div>
+
+    <div class="output-actions" id="stageOutputActions" style="display:none;">
+      <button id="stageCopyBtn" type="button">Copy</button>
+      <button id="stageDownloadBtn" type="button">Download</button>
+    </div>
+
+    <div id="stageDynamicNotes"></div>
+
+    <div class="notes-info">
+      <strong>Field mapping</strong> — <code>defaultZoom</code> becomes <code>cameraZoom</code>, and <code>boyfriend</code>/<code>opponent</code>/<code>girlfriend</code> positions plus their <code>camera_*</code> offsets go into <code>characters.bf</code>/<code>dad</code>/<code>gf</code>. If <code>hide_girlfriend</code> is true, the <code>gf</code> entry is left out entirely. Character <code>zIndex</code> isn't stored by Psych, so it's set from the fields on the left (default 300/200/100, matching official stage layering).<br><br>
+      <strong>Props from Lua</strong> — <code>makeLuaSprite</code>/<code>makeAnimatedLuaSprite</code> give name, asset path and position; <code>addAnimationByPrefix</code> fills in <code>animations</code>; <code>setScrollFactor</code> fills <code>scroll</code>; <code>addLuaSprite('x', true)</code> (the foreground flag) pushes <code>zIndex</code> above the characters, otherwise props stack below them in call order. This is regex parsing, not a Lua interpreter — loops, variables used as sprite names, and anything built programmatically won't be picked up, so check the result against the script.<br><br>
+      <strong>Not carried over</strong> — <code>camera_speed</code> isn't part of the stage schema, it belongs in the song's metadata.json as <code>cameraSpeed</code> (see the Charts tab). Shaders, tweened event animations (like a custom spotlight event), and anything in <code>onEvent</code>/<code>onTimerCompleted</code> are code, not static stage data — you'll need to reimplement that logic directly in your target engine.
     </div>
   </section>
 </main>
@@ -798,19 +875,20 @@ document.getElementById('downloadBtn').addEventListener('click', function () {
   URL.revokeObjectURL(url);
 });
 
-document.getElementById('navCharts').addEventListener('click', function () {
-  document.getElementById('navCharts').classList.add('active');
-  document.getElementById('navCharacters').classList.remove('active');
-  document.getElementById('chartsPage').classList.add('active');
-  document.getElementById('charactersPage').classList.remove('active');
-});
+var pageIds = ['chartsPage', 'charactersPage', 'stagesPage'];
+var navIds = ['navCharts', 'navCharacters', 'navStages'];
 
-document.getElementById('navCharacters').addEventListener('click', function () {
-  document.getElementById('navCharacters').classList.add('active');
-  document.getElementById('navCharts').classList.remove('active');
-  document.getElementById('charactersPage').classList.add('active');
-  document.getElementById('chartsPage').classList.remove('active');
-});
+function activatePage(index) {
+  for (var i = 0; i < pageIds.length; i++) {
+    var isActive = i === index;
+    document.getElementById(pageIds[i]).classList.toggle('active', isActive);
+    document.getElementById(navIds[i]).classList.toggle('active', isActive);
+  }
+}
+
+document.getElementById('navCharts').addEventListener('click', function () { activatePage(0); });
+document.getElementById('navCharacters').addEventListener('click', function () { activatePage(1); });
+document.getElementById('navStages').addEventListener('click', function () { activatePage(2); });
 
 var lastCharResult = null;
 
@@ -1009,6 +1087,290 @@ document.getElementById('charDownloadBtn').addEventListener('click', function ()
   var a = document.createElement('a');
   a.href = url;
   a.download = name + '-character.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+var lastStageResult = null;
+
+function extractLuaProps(luaSource, isPixelDefault) {
+  var props = {};
+  var order = [];
+  var bgCounter = 10;
+  var fgCounter = 310;
+  var conditionalNames = {};
+  var blendNames = {};
+
+  function ensureProp(name) {
+    if (!props[name]) {
+      props[name] = {
+        danceEvery: 0,
+        zIndex: null,
+        position: [0, 0],
+        scale: [1, 1],
+        animType: 'sparrow',
+        name: name,
+        isPixel: isPixelDefault,
+        assetPath: '',
+        scroll: [1, 1],
+        animations: []
+      };
+      order.push(name);
+    }
+    return props[name];
+  }
+
+  var condRegex = /if\s+lowQuality\s*==\s*false\s+then([\s\S]*?)\n\s*end/g;
+  var condMatch;
+  while ((condMatch = condRegex.exec(luaSource))) {
+    var block = condMatch[1];
+    var nameRegex = /make(?:Animated)?LuaSprite\('([^']+)'/g;
+    var nm;
+    while ((nm = nameRegex.exec(block))) conditionalNames[nm[1]] = true;
+  }
+
+  var makeRegex = /make(Animated)?LuaSprite\('([^']+)',\s*'([^']*)',\s*(-?[\d.]+),\s*(-?[\d.]+)\)/g;
+  var m;
+  while ((m = makeRegex.exec(luaSource))) {
+    var prop = ensureProp(m[2]);
+    prop.assetPath = m[3];
+    prop.position = [parseFloat(m[4]), parseFloat(m[5])];
+  }
+
+  var animRegex = /addAnimationByPrefix\('([^']+)',\s*'([^']*)',\s*'([^']*)',\s*(\d+)(?:,\s*(true|false))?\)/g;
+  var am;
+  while ((am = animRegex.exec(luaSource))) {
+    var prop2 = ensureProp(am[1]);
+    var animEntry = { name: am[2], prefix: am[3], frameRate: parseInt(am[4], 10) };
+    if (am[5] === 'true') animEntry.looped = true;
+    prop2.animations.push(animEntry);
+  }
+
+  var scrollRegex = /setScrollFactor\('([^']+)',\s*(-?[\d.]+),\s*(-?[\d.]+)\)/g;
+  var sm;
+  while ((sm = scrollRegex.exec(luaSource))) {
+    ensureProp(sm[1]).scroll = [parseFloat(sm[2]), parseFloat(sm[3])];
+  }
+
+  var blendRegex = /setBlendMode\('([^']+)',\s*'([^']*)'\)/g;
+  var bm;
+  while ((bm = blendRegex.exec(luaSource))) {
+    blendNames[bm[1]] = bm[2];
+  }
+
+  var copyPairs = [];
+  var orderCopyRegex = /setObjectOrder\('([^']+)',\s*getObjectOrder\('([^']+)'\)\)/g;
+  var oc;
+  while ((oc = orderCopyRegex.exec(luaSource))) {
+    copyPairs.push([oc[1], oc[2]]);
+  }
+
+  var addRegex = /addLuaSprite\('([^']+)'(?:,\s*(true))?\)/g;
+  var addm;
+  while ((addm = addRegex.exec(luaSource))) {
+    var prop3 = ensureProp(addm[1]);
+    var foreground = addm[2] === 'true';
+    if (prop3.zIndex === null) {
+      prop3.zIndex = foreground ? fgCounter : bgCounter;
+      if (foreground) fgCounter += 10; else bgCounter += 10;
+    }
+  }
+
+  for (var i = 0; i < copyPairs.length; i++) {
+    var a = copyPairs[i][0], b = copyPairs[i][1];
+    if (props[a] && props[b] && props[b].zIndex !== null) {
+      props[a].zIndex = props[b].zIndex;
+    }
+  }
+
+  var propsArray = [];
+  for (var j = 0; j < order.length; j++) {
+    var p = props[order[j]];
+    if (p.zIndex === null) {
+      p.zIndex = bgCounter;
+      bgCounter += 10;
+    }
+    propsArray.push(p);
+  }
+
+  return {
+    props: propsArray,
+    conditionalNames: Object.keys(conditionalNames),
+    blendNames: blendNames
+  };
+}
+
+function convertPsychStage(stageJson, luaSource, meta) {
+  var isPixelDefault = meta.isPixel === 'true' ? true : (meta.isPixel === 'false' ? false : !!stageJson.isPixelStage);
+  var extraction = luaSource ? extractLuaProps(luaSource, isPixelDefault) : { props: [], conditionalNames: [], blendNames: {} };
+
+  var characters = {};
+  if (Array.isArray(stageJson.boyfriend)) {
+    characters.bf = {
+      zIndex: meta.bfZ,
+      position: stageJson.boyfriend,
+      cameraOffsets: stageJson.camera_boyfriend || [0, 0]
+    };
+  }
+  if (Array.isArray(stageJson.opponent)) {
+    characters.dad = {
+      zIndex: meta.dadZ,
+      position: stageJson.opponent,
+      cameraOffsets: stageJson.camera_opponent || [0, 0]
+    };
+  }
+  if (!stageJson.hide_girlfriend && Array.isArray(stageJson.girlfriend)) {
+    characters.gf = {
+      zIndex: meta.gfZ,
+      position: stageJson.girlfriend,
+      cameraOffsets: stageJson.camera_girlfriend || [0, 0]
+    };
+  }
+
+  var out = {
+    props: extraction.props,
+    cameraZoom: stageJson.defaultZoom !== undefined ? stageJson.defaultZoom : 1,
+    version: '1.0.0',
+    characters: characters,
+    name: meta.name || guessDisplayName(stageJson.directory),
+    directory: stageJson.directory || ''
+  };
+
+  return { stage: out, conditionalNames: extraction.conditionalNames, blendNames: extraction.blendNames };
+}
+
+function setStageStatus(text, kind) {
+  var el = document.getElementById('stageStatus');
+  el.textContent = text;
+  el.className = kind || '';
+}
+
+function readStageMetaFields() {
+  return {
+    name: document.getElementById('stageName').value.trim(),
+    isPixel: document.getElementById('stageIsPixel').value,
+    bfZ: toNumber(document.getElementById('stageBfZ').value, 300),
+    dadZ: toNumber(document.getElementById('stageDadZ').value, 200),
+    gfZ: toNumber(document.getElementById('stageGfZ').value, 100)
+  };
+}
+
+function renderStageOutput() {
+  var wrap = document.getElementById('stageOutputWrap');
+  var actions = document.getElementById('stageOutputActions');
+
+  if (!lastStageResult) {
+    wrap.innerHTML = '<div class="empty-state">Convert a stage to see the output here.</div>';
+    actions.style.display = 'none';
+    document.getElementById('stageDynamicNotes').innerHTML = '';
+    return;
+  }
+
+  wrap.innerHTML = '<textarea id="stageOutputArea" readonly spellcheck="false" style="width:100%;height:480px;"></textarea>';
+  document.getElementById('stageOutputArea').value = JSON.stringify(lastStageResult.stage, null, 2);
+  actions.style.display = 'flex';
+
+  var notesHtml = '';
+  if (lastStageResult.conditionalNames.length) {
+    notesHtml += '<div class="notes-info"><strong>Behind a lowQuality check in the Lua</strong> — ' + lastStageResult.conditionalNames.join(', ') + '. They were still extracted; decide in your engine whether to keep them unconditional or gate them again.</div>';
+  }
+  var blendKeys = Object.keys(lastStageResult.blendNames);
+  if (blendKeys.length) {
+    var blendList = blendKeys.map(function (k) { return k + ' = ' + lastStageResult.blendNames[k]; }).join(', ');
+    notesHtml += '<div class="notes-info"><strong>Blend modes found (not in this schema)</strong> — ' + blendList + '.</div>';
+  }
+  document.getElementById('stageDynamicNotes').innerHTML = notesHtml;
+}
+
+document.getElementById('stageFileBtn').addEventListener('click', function () {
+  document.getElementById('stageFileInput').click();
+});
+
+document.getElementById('stageFileInput').addEventListener('change', function (e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('stageFileLabel').textContent = file.name;
+  var reader = new FileReader();
+  reader.onload = function (ev) {
+    document.getElementById('stageInput').value = ev.target.result;
+    trySuggestStageFields();
+  };
+  reader.readAsText(file);
+});
+
+document.getElementById('luaFileBtn').addEventListener('click', function () {
+  document.getElementById('luaFileInput').click();
+});
+
+document.getElementById('luaFileInput').addEventListener('change', function (e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('luaFileLabel').textContent = file.name;
+  var reader = new FileReader();
+  reader.onload = function (ev) {
+    document.getElementById('luaInput').value = ev.target.result;
+  };
+  reader.readAsText(file);
+});
+
+document.getElementById('stageInput').addEventListener('blur', trySuggestStageFields);
+
+function trySuggestStageFields() {
+  var raw = document.getElementById('stageInput').value.trim();
+  if (!raw) return;
+  try {
+    var parsed = JSON.parse(raw);
+    var nameField = document.getElementById('stageName');
+    if (!nameField.value && parsed.directory) nameField.value = guessDisplayName(parsed.directory);
+  } catch (err) {
+    return;
+  }
+}
+
+document.getElementById('stageConvertBtn').addEventListener('click', function () {
+  var raw = document.getElementById('stageInput').value.trim();
+  if (!raw) {
+    setStageStatus('Paste or upload a Psych stage JSON first.', 'err');
+    return;
+  }
+
+  var parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    setStageStatus('That JSON doesn\'t parse: ' + err.message, 'err');
+    return;
+  }
+
+  try {
+    var meta = readStageMetaFields();
+    var luaSource = document.getElementById('luaInput').value.trim();
+    lastStageResult = convertPsychStage(parsed, luaSource, meta);
+    var propCount = lastStageResult.stage.props.length;
+    var charCount = Object.keys(lastStageResult.stage.characters).length;
+    setStageStatus('Converted ' + charCount + ' characters and ' + propCount + ' props.', 'ok');
+    renderStageOutput();
+  } catch (err) {
+    setStageStatus('Conversion failed: ' + err.message, 'err');
+  }
+});
+
+document.getElementById('stageCopyBtn').addEventListener('click', function () {
+  var area = document.getElementById('stageOutputArea');
+  if (!area) return;
+  area.select();
+  document.execCommand('copy');
+  setStageStatus('Copied stage.json to clipboard.', 'ok');
+});
+
+document.getElementById('stageDownloadBtn').addEventListener('click', function () {
+  if (!lastStageResult) return;
+  var name = (readStageMetaFields().name || 'stage').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  var blob = new Blob([JSON.stringify(lastStageResult.stage, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = name + '-stage.json';
   a.click();
   URL.revokeObjectURL(url);
 });
