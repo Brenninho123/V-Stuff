@@ -75,7 +75,44 @@
     margin: 0;
   }
 
-  main {
+  .page-nav {
+    display: flex;
+    gap: 10px;
+    padding: 20px 48px 0;
+  }
+
+  .page-nav button {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    padding: 10px 20px;
+    color: var(--text-dim);
+  }
+
+  .page-nav button.active {
+    color: var(--text);
+    background: var(--surface);
+    border-color: var(--border);
+  }
+
+  .page-nav button.active .dot { background: var(--green); }
+
+  .page-nav .dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    margin-right: 8px;
+  }
+
+  .page { display: none; }
+  .page.active {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1px;
@@ -83,7 +120,7 @@
   }
 
   @media (max-width: 900px) {
-    main { grid-template-columns: 1fr; }
+    .page.active { grid-template-columns: 1fr; }
   }
 
   .panel {
@@ -274,7 +311,12 @@
   <p>Converts a Psych Engine chart into the V-Slice chart and metadata format. Paste or upload a chart, fill in what Psych doesn't store, and get both output files.</p>
 </header>
 
-<main>
+<nav class="page-nav">
+  <button id="navCharts" class="active" type="button"><span class="dot"></span>Charts</button>
+  <button id="navCharacters" type="button"><span class="dot"></span>Characters</button>
+</nav>
+
+<main id="chartsPage" class="page active">
   <section class="panel">
     <h2><span class="tag from">FROM</span> Psych Engine</h2>
     <p class="sub">One difficulty in, copied across easy / normal / hard on the way out.</p>
@@ -345,6 +387,95 @@
 
     <div class="notes-info">
       <strong>Event mapping</strong> — Play Animation and Add Camera Zoom convert directly. Flash Camera / flash become FlashCamera. Anything else (Philly Glow, Cinematics, custom stage events) passes through with its original name under <code>v.p1</code> / <code>v.p2</code> so nothing is silently dropped — check the console list after converting and wire those up in your engine fork as needed.
+    </div>
+  </section>
+</main>
+
+<main id="charactersPage" class="page">
+  <section class="panel">
+    <h2><span class="tag from">FROM</span> Psych Engine</h2>
+    <p class="sub">A character's per-animation offsets carry over exactly. A few Psych-only fields don't have a V-Slice home — see the note below.</p>
+
+    <label class="first">Character file</label>
+    <div class="file-drop">
+      <span id="charFileLabel">No file selected</span>
+      <button id="charFileBtn" type="button">Upload .json</button>
+      <input type="file" id="charFileInput" accept="application/json,.json">
+    </div>
+
+    <label>Or paste the character JSON</label>
+    <textarea id="charInput" placeholder="{ &quot;animations&quot;: [ ... ], &quot;image&quot;: &quot;characters/BOYFRIEND&quot; }" spellcheck="false"></textarea>
+
+    <label class="first">Metadata Psych doesn't store</label>
+    <div class="field-row">
+      <div>
+        <label class="first">Display name</label>
+        <input type="text" id="charName" placeholder="Boyfriend">
+      </div>
+      <div>
+        <label class="first">Render type</label>
+        <select id="charRenderType">
+          <option value="multianimateatlas">multianimateatlas</option>
+          <option value="packeranimation">packeranimation</option>
+          <option value="sparrow">sparrow</option>
+        </select>
+      </div>
+    </div>
+
+    <label class="first">Asset path</label>
+    <input type="text" id="charAssetPath" placeholder="shared:characters/bf">
+
+    <div class="field-row">
+      <div>
+        <label class="first">Offset X</label>
+        <input type="text" id="charOffsetX" placeholder="0">
+      </div>
+      <div>
+        <label class="first">Offset Y</label>
+        <input type="text" id="charOffsetY" placeholder="0">
+      </div>
+    </div>
+    <div class="field-row">
+      <div>
+        <label class="first">Camera offset X</label>
+        <input type="text" id="charCamOffsetX" placeholder="0">
+      </div>
+      <div>
+        <label class="first">Camera offset Y</label>
+        <input type="text" id="charCamOffsetY" placeholder="0">
+      </div>
+    </div>
+    <div class="field-row">
+      <div>
+        <label class="first">Death camera offset X</label>
+        <input type="text" id="charDeathCamOffsetX" placeholder="0">
+      </div>
+      <div>
+        <label class="first">Death camera offset Y</label>
+        <input type="text" id="charDeathCamOffsetY" placeholder="0">
+      </div>
+    </div>
+
+    <button id="charConvertBtn" type="button">Convert character</button>
+    <div id="charStatus"></div>
+  </section>
+
+  <section class="panel">
+    <h2><span class="tag to">TO</span> V-Slice</h2>
+    <p class="sub">One file — the character definition V-Slice loads directly.</p>
+
+    <div id="charOutputWrap">
+      <div class="empty-state">Convert a character to see the output here.</div>
+    </div>
+
+    <div class="output-actions" id="charOutputActions" style="display:none;">
+      <button id="charCopyBtn" type="button">Copy</button>
+      <button id="charDownloadBtn" type="button">Download</button>
+    </div>
+
+    <div class="notes-info">
+      <strong>Field mapping</strong> — each animation's <code>anim</code> becomes <code>name</code>, its atlas <code>name</code> becomes <code>prefix</code>, <code>loop</code> becomes <code>looped</code>, and per-animation <code>offsets</code> carry over exactly (no shared default is assumed). An animation whose id contains "death" is renamed to <code>firstDeath</code>/<code>deathLoop</code>/<code>deathConfirm</code> and a <code>death</code> block is added — Psych usually only has one death animation, so you'll likely need to create the loop/confirm states yourself.<br><br>
+      <strong>Not carried over</strong> — <code>position</code> (belongs in the stage file, not the character), <code>healthicon</code> / <code>healthbar_colors</code> (no field in this schema), <code>no_antialiasing</code>, <code>scale</code>, <code>sing_duration</code>, <code>vocals_file</code>. Set these directly in the output if your fork supports them.
     </div>
   </section>
 </main>
@@ -441,10 +572,11 @@ function convertNotesAndTimeChanges(song) {
   var notesOut = [];
   var timeChanges = [];
   var runningBeat = 0;
-  var lastBpm = song.bpm || 100;
+  var startBpm = (sections.length && sections[0].bpm) || song.bpm || 100;
+  var lastBpm = startBpm;
   var sectionStartTime = 0;
 
-  timeChanges.push({ t: 0, b: 0, bpm: lastBpm, bt: [4, 4, 4, 4] });
+  timeChanges.push({ t: 0, b: 0, bpm: startBpm, bt: [4, 4, 4, 4] });
 
   for (var i = 0; i < sections.length; i++) {
     var section = sections[i];
@@ -662,6 +794,221 @@ document.getElementById('downloadBtn').addEventListener('click', function () {
   var a = document.createElement('a');
   a.href = url;
   a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('navCharts').addEventListener('click', function () {
+  document.getElementById('navCharts').classList.add('active');
+  document.getElementById('navCharacters').classList.remove('active');
+  document.getElementById('chartsPage').classList.add('active');
+  document.getElementById('charactersPage').classList.remove('active');
+});
+
+document.getElementById('navCharacters').addEventListener('click', function () {
+  document.getElementById('navCharacters').classList.add('active');
+  document.getElementById('navCharts').classList.remove('active');
+  document.getElementById('charactersPage').classList.add('active');
+  document.getElementById('chartsPage').classList.remove('active');
+});
+
+var lastCharResult = null;
+
+function isDeathAnimId(id) {
+  if (!id) return false;
+  var lower = String(id).toLowerCase();
+  return lower.indexOf('death') !== -1 || lower === 'sad';
+}
+
+function classifyDeathAnim(id) {
+  var lower = String(id).toLowerCase();
+  if (lower.indexOf('loop') !== -1) return 'deathLoop';
+  if (lower.indexOf('confirm') !== -1) return 'deathConfirm';
+  return 'firstDeath';
+}
+
+function guessAssetPath(image) {
+  if (!image) return 'shared:characters/character';
+  return 'shared:' + String(image).toLowerCase();
+}
+
+function guessDisplayName(image) {
+  if (!image) return 'Character';
+  var last = String(image).split('/').pop();
+  var words = last.replace(/[_-]+/g, ' ').toLowerCase().split(' ');
+  for (var i = 0; i < words.length; i++) {
+    if (words[i].length) words[i] = words[i][0].toUpperCase() + words[i].slice(1);
+  }
+  return words.join(' ');
+}
+
+function toNumber(value, fallback) {
+  var n = parseFloat(value);
+  return isNaN(n) ? fallback : n;
+}
+
+function convertPsychCharacter(psychJson, meta) {
+  var anims = psychJson.animations || [];
+  var outAnims = [];
+  var hasDeath = false;
+
+  for (var i = 0; i < anims.length; i++) {
+    var a = anims[i];
+    var outAnim = { name: a.anim, prefix: a.name };
+
+    if (a.loop) outAnim.looped = true;
+    if (Array.isArray(a.offsets)) outAnim.offsets = a.offsets;
+    if (typeof a.fps === 'number') outAnim.frameRate = a.fps;
+    if (Array.isArray(a.indices) && a.indices.length) outAnim.indices = a.indices;
+
+    if (isDeathAnimId(a.anim)) {
+      hasDeath = true;
+      outAnim.name = classifyDeathAnim(a.anim);
+    }
+
+    outAnims.push(outAnim);
+  }
+
+  var camX = meta.cameraOffsetX !== null ? meta.cameraOffsetX : (psychJson.camera_position ? psychJson.camera_position[0] : 0);
+  var camY = meta.cameraOffsetY !== null ? meta.cameraOffsetY : (psychJson.camera_position ? psychJson.camera_position[1] : 0);
+
+  var out = {
+    version: '1.0.0',
+    name: meta.name || guessDisplayName(psychJson.image),
+    renderType: meta.renderType || 'multianimateatlas',
+    assetPath: meta.assetPath || guessAssetPath(psychJson.image),
+    flipX: !!psychJson.flip_x,
+    offsets: [meta.offsetX || 0, meta.offsetY || 0],
+    cameraOffsets: [camX, camY],
+    animations: outAnims
+  };
+
+  if (hasDeath) {
+    out.death = {
+      cameraOffsets: [
+        meta.deathCameraOffsetX !== null ? meta.deathCameraOffsetX : camX,
+        meta.deathCameraOffsetY !== null ? meta.deathCameraOffsetY : camY
+      ]
+    };
+  }
+
+  return out;
+}
+
+function setCharStatus(text, kind) {
+  var el = document.getElementById('charStatus');
+  el.textContent = text;
+  el.className = kind || '';
+}
+
+function readCharMetaFields() {
+  return {
+    name: document.getElementById('charName').value.trim(),
+    renderType: document.getElementById('charRenderType').value,
+    assetPath: document.getElementById('charAssetPath').value.trim(),
+    offsetX: toNumber(document.getElementById('charOffsetX').value, 0),
+    offsetY: toNumber(document.getElementById('charOffsetY').value, 0),
+    cameraOffsetX: document.getElementById('charCamOffsetX').value.trim() === '' ? null : toNumber(document.getElementById('charCamOffsetX').value, 0),
+    cameraOffsetY: document.getElementById('charCamOffsetY').value.trim() === '' ? null : toNumber(document.getElementById('charCamOffsetY').value, 0),
+    deathCameraOffsetX: document.getElementById('charDeathCamOffsetX').value.trim() === '' ? null : toNumber(document.getElementById('charDeathCamOffsetX').value, 0),
+    deathCameraOffsetY: document.getElementById('charDeathCamOffsetY').value.trim() === '' ? null : toNumber(document.getElementById('charDeathCamOffsetY').value, 0)
+  };
+}
+
+function renderCharOutput() {
+  var wrap = document.getElementById('charOutputWrap');
+  var actions = document.getElementById('charOutputActions');
+
+  if (!lastCharResult) {
+    wrap.innerHTML = '<div class="empty-state">Convert a character to see the output here.</div>';
+    actions.style.display = 'none';
+    return;
+  }
+
+  wrap.innerHTML = '<textarea id="charOutputArea" readonly spellcheck="false" style="width:100%;height:480px;"></textarea>';
+  document.getElementById('charOutputArea').value = JSON.stringify(lastCharResult, null, 2);
+  actions.style.display = 'flex';
+}
+
+document.getElementById('charFileBtn').addEventListener('click', function () {
+  document.getElementById('charFileInput').click();
+});
+
+document.getElementById('charFileInput').addEventListener('change', function (e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('charFileLabel').textContent = file.name;
+  var reader = new FileReader();
+  reader.onload = function (ev) {
+    document.getElementById('charInput').value = ev.target.result;
+    trySuggestCharFields();
+  };
+  reader.readAsText(file);
+});
+
+document.getElementById('charInput').addEventListener('blur', trySuggestCharFields);
+
+function trySuggestCharFields() {
+  var raw = document.getElementById('charInput').value.trim();
+  if (!raw) return;
+  try {
+    var parsed = JSON.parse(raw);
+    var nameField = document.getElementById('charName');
+    var assetField = document.getElementById('charAssetPath');
+    var camXField = document.getElementById('charCamOffsetX');
+    var camYField = document.getElementById('charCamOffsetY');
+    if (!nameField.value && parsed.image) nameField.value = guessDisplayName(parsed.image);
+    if (!assetField.value && parsed.image) assetField.value = guessAssetPath(parsed.image);
+    if (!camXField.value && Array.isArray(parsed.camera_position)) camXField.value = parsed.camera_position[0];
+    if (!camYField.value && Array.isArray(parsed.camera_position)) camYField.value = parsed.camera_position[1];
+  } catch (err) {
+    return;
+  }
+}
+
+document.getElementById('charConvertBtn').addEventListener('click', function () {
+  var raw = document.getElementById('charInput').value.trim();
+  if (!raw) {
+    setCharStatus('Paste or upload a Psych character first.', 'err');
+    return;
+  }
+
+  var parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    setCharStatus('That JSON doesn\'t parse: ' + err.message, 'err');
+    return;
+  }
+
+  try {
+    var meta = readCharMetaFields();
+    lastCharResult = convertPsychCharacter(parsed, meta);
+    var animCount = lastCharResult.animations.length;
+    var deathNote = lastCharResult.death ? ', death animation detected' : '';
+    setCharStatus('Converted ' + animCount + ' animations' + deathNote + '.', 'ok');
+    renderCharOutput();
+  } catch (err) {
+    setCharStatus('Conversion failed: ' + err.message, 'err');
+  }
+});
+
+document.getElementById('charCopyBtn').addEventListener('click', function () {
+  var area = document.getElementById('charOutputArea');
+  if (!area) return;
+  area.select();
+  document.execCommand('copy');
+  setCharStatus('Copied character.json to clipboard.', 'ok');
+});
+
+document.getElementById('charDownloadBtn').addEventListener('click', function () {
+  if (!lastCharResult) return;
+  var name = (readCharMetaFields().name || 'character').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  var blob = new Blob([JSON.stringify(lastCharResult, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = name + '-character.json';
   a.click();
   URL.revokeObjectURL(url);
 });
