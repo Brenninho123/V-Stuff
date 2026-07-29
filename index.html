@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V Stuff — Psych to V-Slice Converter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #121118;
+    --surface: #1a1823;
+    --surface-2: #221f2e;
+    --border: #322e40;
+    --text: #ece9f5;
+    --text-dim: #9d97b2;
+    --purple: #c24b99;
+    --blue: #12b3ff;
+    --green: #35e34a;
+    --red: #ff4d5e;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+  }
+
+  .lanes {
+    height: 6px;
+    display: flex;
+  }
+  .lanes span { flex: 1; }
+  .lanes .l0 { background: var(--purple); }
+  .lanes .l1 { background: var(--blue); }
+  .lanes .l2 { background: var(--green); }
+  .lanes .l3 { background: var(--red); }
+
+  header {
+    padding: 40px 48px 28px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  h1 {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 42px;
+    letter-spacing: 0.01em;
+    margin: 6px 0 8px;
+  }
+
+  h1 .arrow {
+    display: inline-block;
+    margin: 0 10px;
+    color: var(--green);
+    transform: translateY(-2px);
+  }
+
+  header p {
+    color: var(--text-dim);
+    max-width: 640px;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+  }
+
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--bg);
+    padding: 32px 48px;
+  }
+
+  .panel h2 {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: 20px;
+    letter-spacing: 0.03em;
+    margin: 0 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .panel h2 .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    letter-spacing: 0.05em;
+  }
+
+  .tag.from { background: rgba(194,75,153,0.18); color: var(--purple); }
+  .tag.to { background: rgba(53,227,74,0.18); color: var(--green); }
+
+  .panel .sub {
+    color: var(--text-dim);
+    font-size: 13px;
+    margin: 0 0 20px;
+  }
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-dim);
+    letter-spacing: 0.04em;
+    margin: 16px 0 6px;
+  }
+
+  label.first { margin-top: 0; }
+
+  textarea, input[type=text] {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 10px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    resize: vertical;
+  }
+
+  textarea:focus, input[type=text]:focus {
+    outline: none;
+    border-color: var(--green);
+  }
+
+  #psychInput { height: 220px; }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .file-drop {
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  .file-drop input { display: none; }
+
+  button {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    padding: 8px 14px;
+    font-size: 14px;
+    transition: transform 0.08s ease, border-color 0.15s ease;
+  }
+
+  button:hover { border-color: var(--text-dim); }
+  button:active { transform: scale(0.97); }
+
+  #convertBtn {
+    width: 100%;
+    margin-top: 24px;
+    padding: 14px;
+    font-size: 17px;
+    background: linear-gradient(90deg, var(--purple), var(--blue), var(--green), var(--red));
+    background-size: 300% 100%;
+    background-position: 0% 0%;
+    border: none;
+    color: #0c0b12;
+    transition: background-position 0.4s ease, transform 0.08s ease;
+  }
+
+  #convertBtn:hover { background-position: 100% 0%; }
+  #convertBtn:active { transform: scale(0.985); }
+
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .tabs button {
+    background: var(--surface);
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+
+  .tabs button.active {
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  .output-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .output-actions button { font-size: 13px; padding: 6px 12px; }
+
+  #outputArea {
+    width: 100%;
+    height: 420px;
+  }
+
+  .empty-state {
+    color: var(--text-dim);
+    font-size: 13px;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    padding: 40px 20px;
+    text-align: center;
+  }
+
+  .notes-info {
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  .notes-info strong { color: var(--text); }
+
+  #status {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 10px;
+    min-height: 16px;
+  }
+
+  #status.ok { color: var(--green); }
+  #status.err { color: var(--red); }
+</style>
+</head>
+<body>
+
+<div class="lanes"><span class="l0"></span><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
+
+<header>
+  <div class="eyebrow">V Stuff</div>
+  <h1>Psych <span class="arrow">&#8594;</span> V-Slice</h1>
+  <p>Converts a Psych Engine chart into the V-Slice chart and metadata format. Paste or upload a chart, fill in what Psych doesn't store, and get both output files.</p>
+</header>
+
+<main>
+  <section class="panel">
+    <h2><span class="tag from">FROM</span> Psych Engine</h2>
+    <p class="sub">One difficulty in, copied across easy / normal / hard on the way out.</p>
+
+    <label class="first">Chart file</label>
+    <div class="file-drop">
+      <span id="fileLabel">No file selected</span>
+      <button id="fileBtn" type="button">Upload .json</button>
+      <input type="file" id="fileInput" accept="application/json,.json">
+    </div>
+
+    <label>Or paste the chart JSON</label>
+    <textarea id="psychInput" placeholder="{ &quot;song&quot;: { ... } }" spellcheck="false"></textarea>
+
+    <label class="first">Metadata Psych doesn't store</label>
+    <div class="field-row">
+      <div>
+        <label class="first">Song name</label>
+        <input type="text" id="songName" placeholder="Blammed (Remix)">
+      </div>
+      <div>
+        <label class="first">Artist</label>
+        <input type="text" id="artist" placeholder="Kawai Sprite">
+      </div>
+    </div>
+    <div class="field-row">
+      <div>
+        <label class="first">Charter</label>
+        <input type="text" id="charter" placeholder="your name">
+      </div>
+      <div>
+        <label class="first">Album</label>
+        <input type="text" id="album" placeholder="volume1">
+      </div>
+    </div>
+    <div class="field-row">
+      <div>
+        <label class="first">Stage</label>
+        <input type="text" id="stage" placeholder="mainStage">
+      </div>
+      <div>
+        <label class="first">Note style</label>
+        <input type="text" id="noteStyle" placeholder="funkin">
+      </div>
+    </div>
+
+    <button id="convertBtn" type="button">Convert chart</button>
+    <div id="status"></div>
+  </section>
+
+  <section class="panel">
+    <h2><span class="tag to">TO</span> V-Slice</h2>
+    <p class="sub">chart.json holds notes and events, metadata.json holds everything about the song.</p>
+
+    <div class="tabs">
+      <button id="tabChart" class="active" type="button">chart.json</button>
+      <button id="tabMeta" type="button">metadata.json</button>
+    </div>
+
+    <div id="outputWrap">
+      <div class="empty-state">Convert a chart to see the output here.</div>
+    </div>
+
+    <div class="output-actions" id="outputActions" style="display:none;">
+      <button id="copyBtn" type="button">Copy</button>
+      <button id="downloadBtn" type="button">Download</button>
+    </div>
+
+    <div class="notes-info">
+      <strong>Event mapping</strong> — Play Animation and Add Camera Zoom convert directly. Flash Camera / flash become FlashCamera. Anything else (Philly Glow, Cinematics, custom stage events) passes through with its original name under <code>v.p1</code> / <code>v.p2</code> so nothing is silently dropped — check the console list after converting and wire those up in your engine fork as needed.
+    </div>
+  </section>
+</main>
+
+<script>
+var lastResult = null;
+var activeTab = 'chart';
+
+function mapConvertedDirection(mustHit, noteData) {
+  return mustHit ? noteData : (noteData + 4) % 8;
+}
+
+var NOTE_KIND_TABLE = {
+  'Alt Animation': 'Alt Animation',
+  'Hurt Note': 'Hurt Note',
+  'No Animation': 'No Animation',
+  'Bullet Note': 'Bullet Note',
+  'Hey!': 'Hey!'
+};
+
+function mapNoteKind(kind) {
+  return NOTE_KIND_TABLE[kind] || kind;
+}
+
+function mapCharacterTarget(name) {
+  if (!name) return 'boyfriend';
+  var lower = String(name).toLowerCase();
+  if (lower === 'dad' || lower === 'opponent') return 'dad';
+  if (lower === 'gf' || lower === 'girlfriend') return 'gf';
+  return 'boyfriend';
+}
+
+function roundTime(t) {
+  return Math.round(t * 1000) / 1000;
+}
+
+function mapSingleEvent(name, p1, p2, time, zoomState) {
+  if (name === 'Play Animation') {
+    return [{
+      t: roundTime(time),
+      e: 'PlayAnimation',
+      v: { force: true, anim: p1 || '', target: mapCharacterTarget(p2) }
+    }];
+  }
+
+  if (name === 'Add Camera Zoom') {
+    var amount = parseFloat(p1);
+    if (isNaN(amount)) amount = 0;
+    var key = (p2 && String(p2).length) ? p2 : 'default';
+    if (!(key in zoomState)) zoomState[key] = 1;
+    zoomState[key] = zoomState[key] + amount;
+    return [{
+      t: roundTime(time),
+      e: 'ZoomCamera',
+      v: { ease: 'linear', duration: 0, zoom: Math.round(zoomState[key] * 1000) / 1000, target: key === 'default' ? 'camGame' : key }
+    }];
+  }
+
+  if (name === 'Flash Camera' || name === 'flash') {
+    var duration = parseFloat(p1);
+    if (isNaN(duration)) duration = 0.5;
+    return [{
+      t: roundTime(time),
+      e: 'FlashCamera',
+      v: { duration: duration, color: '#FFFFFF', target: p2 && p2.length ? p2 : 'camGame' }
+    }];
+  }
+
+  return [{
+    t: roundTime(time),
+    e: name,
+    v: { p1: p1 === undefined ? '' : p1, p2: p2 === undefined ? '' : p2 }
+  }];
+}
+
+function convertPsychEvents(events) {
+  var out = [];
+  var zoomState = {};
+  for (var i = 0; i < events.length; i++) {
+    var time = events[i][0];
+    var list = events[i][1] || [];
+    for (var j = 0; j < list.length; j++) {
+      var entry = list[j];
+      var mapped = mapSingleEvent(entry[0], entry[1], entry[2], time, zoomState);
+      for (var k = 0; k < mapped.length; k++) out.push(mapped[k]);
+    }
+  }
+  out.sort(function (a, b) { return a.t - b.t; });
+  return out;
+}
+
+function convertNotesAndTimeChanges(song) {
+  var sections = song.notes || [];
+  var notesOut = [];
+  var timeChanges = [];
+  var runningBeat = 0;
+  var lastBpm = song.bpm || 100;
+  var sectionStartTime = 0;
+
+  timeChanges.push({ t: 0, b: 0, bpm: lastBpm, bt: [4, 4, 4, 4] });
+
+  for (var i = 0; i < sections.length; i++) {
+    var section = sections[i];
+    var sectionBpm = section.bpm || lastBpm;
+
+    if (section.changeBPM && sectionBpm !== lastBpm) {
+      timeChanges.push({
+        t: Math.round(sectionStartTime),
+        b: Math.round(runningBeat),
+        bpm: sectionBpm,
+        bt: [4, 4, 4, 4]
+      });
+      lastBpm = sectionBpm;
+    }
+
+    var sectionNotes = section.sectionNotes || [];
+    for (var n = 0; n < sectionNotes.length; n++) {
+      var note = sectionNotes[n];
+      var time = note[0];
+      var noteData = note[1];
+      var sustain = note[2];
+      var kind = note[3];
+
+      var outNote = { t: roundTime(time), d: mapConvertedDirection(section.mustHitSection, noteData) };
+      if (sustain && sustain > 0) outNote.l = roundTime(sustain);
+      if (kind) outNote.k = mapNoteKind(kind);
+      notesOut.push(outNote);
+    }
+
+    var beats = section.sectionBeats || 4;
+    var msPerBeat = 60000 / sectionBpm;
+    sectionStartTime += beats * msPerBeat;
+    runningBeat += beats;
+  }
+
+  notesOut.sort(function (a, b) { return a.t - b.t; });
+
+  return { notes: notesOut, timeChanges: timeChanges };
+}
+
+function cloneNotes(notes) {
+  return JSON.parse(JSON.stringify(notes));
+}
+
+function convertPsychChart(psychJson, meta) {
+  var song = psychJson.song;
+  if (!song) throw new Error('Missing "song" root key — this doesn\'t look like a Psych chart.');
+
+  var noteResult = convertNotesAndTimeChanges(song);
+  var eventsOut = convertPsychEvents(song.events || []);
+  var speed = song.speed || 1;
+
+  var chartOut = {
+    version: '2.0.0',
+    scrollSpeed: { easy: speed, normal: speed, hard: speed },
+    events: eventsOut,
+    notes: {
+      easy: cloneNotes(noteResult.notes),
+      normal: cloneNotes(noteResult.notes),
+      hard: cloneNotes(noteResult.notes)
+    },
+    generatedBy: 'V Stuff'
+  };
+
+  var metadataOut = {
+    version: '2.2.4',
+    songName: meta.songName || song.song || 'Untitled',
+    artist: meta.artist || '',
+    charter: meta.charter || '',
+    offsets: {},
+    playData: {
+      difficulties: ['easy', 'normal', 'hard'],
+      characters: {
+        player: song.player1 || 'bf',
+        girlfriend: song.gfVersion || 'gf',
+        opponent: song.player2 || 'dad',
+        opponentVocals: [song.player2 || 'dad'],
+        playerVocals: [song.player1 || 'bf']
+      },
+      stage: meta.stage || song.stage || 'mainStage',
+      noteStyle: meta.noteStyle || 'funkin',
+      ratings: { easy: 0, normal: 0, hard: 0 },
+      album: meta.album || ''
+    },
+    generatedBy: 'V Stuff',
+    timeChanges: noteResult.timeChanges
+  };
+
+  return { chart: chartOut, metadata: metadataOut };
+}
+
+function setStatus(text, kind) {
+  var el = document.getElementById('status');
+  el.textContent = text;
+  el.className = kind || '';
+}
+
+function readMetaFields() {
+  return {
+    songName: document.getElementById('songName').value.trim(),
+    artist: document.getElementById('artist').value.trim(),
+    charter: document.getElementById('charter').value.trim(),
+    album: document.getElementById('album').value.trim(),
+    stage: document.getElementById('stage').value.trim(),
+    noteStyle: document.getElementById('noteStyle').value.trim()
+  };
+}
+
+function renderOutput() {
+  var wrap = document.getElementById('outputWrap');
+  var actions = document.getElementById('outputActions');
+
+  if (!lastResult) {
+    wrap.innerHTML = '<div class="empty-state">Convert a chart to see the output here.</div>';
+    actions.style.display = 'none';
+    return;
+  }
+
+  var data = activeTab === 'chart' ? lastResult.chart : lastResult.metadata;
+  wrap.innerHTML = '<textarea id="outputArea" readonly spellcheck="false"></textarea>';
+  document.getElementById('outputArea').value = JSON.stringify(data, null, 2);
+  actions.style.display = 'flex';
+}
+
+document.getElementById('tabChart').addEventListener('click', function () {
+  activeTab = 'chart';
+  document.getElementById('tabChart').classList.add('active');
+  document.getElementById('tabMeta').classList.remove('active');
+  renderOutput();
+});
+
+document.getElementById('tabMeta').addEventListener('click', function () {
+  activeTab = 'metadata';
+  document.getElementById('tabMeta').classList.add('active');
+  document.getElementById('tabChart').classList.remove('active');
+  renderOutput();
+});
+
+document.getElementById('fileBtn').addEventListener('click', function () {
+  document.getElementById('fileInput').click();
+});
+
+document.getElementById('fileInput').addEventListener('change', function (e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('fileLabel').textContent = file.name;
+  var reader = new FileReader();
+  reader.onload = function (ev) {
+    document.getElementById('psychInput').value = ev.target.result;
+    trySuggestFields();
+  };
+  reader.readAsText(file);
+});
+
+document.getElementById('psychInput').addEventListener('blur', trySuggestFields);
+
+function trySuggestFields() {
+  var raw = document.getElementById('psychInput').value.trim();
+  if (!raw) return;
+  try {
+    var parsed = JSON.parse(raw);
+    var song = parsed.song;
+    if (!song) return;
+    var songNameField = document.getElementById('songName');
+    var stageField = document.getElementById('stage');
+    if (!songNameField.value && song.song) songNameField.value = song.song;
+    if (!stageField.value && song.stage) stageField.value = song.stage;
+  } catch (err) {
+    return;
+  }
+}
+
+document.getElementById('convertBtn').addEventListener('click', function () {
+  var raw = document.getElementById('psychInput').value.trim();
+  if (!raw) {
+    setStatus('Paste or upload a Psych chart first.', 'err');
+    return;
+  }
+
+  var parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    setStatus('That JSON doesn\'t parse: ' + err.message, 'err');
+    return;
+  }
+
+  try {
+    var meta = readMetaFields();
+    lastResult = convertPsychChart(parsed, meta);
+    var noteCount = lastResult.chart.notes.normal.length;
+    var eventCount = lastResult.chart.events.length;
+    setStatus('Converted ' + noteCount + ' notes and ' + eventCount + ' events.', 'ok');
+    renderOutput();
+  } catch (err) {
+    setStatus('Conversion failed: ' + err.message, 'err');
+  }
+});
+
+document.getElementById('copyBtn').addEventListener('click', function () {
+  var area = document.getElementById('outputArea');
+  if (!area) return;
+  area.select();
+  document.execCommand('copy');
+  setStatus('Copied ' + (activeTab === 'chart' ? 'chart.json' : 'metadata.json') + ' to clipboard.', 'ok');
+});
+
+document.getElementById('downloadBtn').addEventListener('click', function () {
+  if (!lastResult) return;
+  var data = activeTab === 'chart' ? lastResult.chart : lastResult.metadata;
+  var name = (readMetaFields().songName || 'song').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  var filename = activeTab === 'chart' ? name + '-chart.json' : name + '-metadata.json';
+  var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+</script>
+
+</body>
+</html>
