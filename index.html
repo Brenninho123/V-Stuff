@@ -101,6 +101,32 @@
 
   #installBtn .dot { background: var(--green); }
 
+  .dir-nav {
+    display: flex;
+    gap: 10px;
+    padding: 28px 48px 0;
+  }
+
+  .dir-nav button {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 22px;
+    color: var(--text-dim);
+    flex: 1;
+    text-align: center;
+  }
+
+  .dir-nav button.active {
+    color: var(--bg);
+    border-color: transparent;
+    background: linear-gradient(90deg, var(--purple), var(--blue), var(--green), var(--red));
+  }
+
   .page-nav {
     display: flex;
     gap: 10px;
@@ -337,6 +363,11 @@
   <p>Converts a Psych Engine chart into the V-Slice chart and metadata format. Paste or upload a chart, fill in what Psych doesn't store, and get both output files.</p>
   <button id="installBtn" type="button"><span class="dot"></span>Install app</button>
 </header>
+
+<nav class="dir-nav">
+  <button id="navDirForward" class="active" type="button">Psych &#8594; V-Slice</button>
+  <button id="navDirReverse" type="button">V-Slice &#8594; Psych</button>
+</nav>
 
 <nav class="page-nav">
   <button id="navCharts" class="active" type="button"><span class="dot"></span>Charts</button>
@@ -580,6 +611,195 @@
       <strong>Field mapping</strong> — <code>defaultZoom</code> becomes <code>cameraZoom</code>, and <code>boyfriend</code>/<code>opponent</code>/<code>girlfriend</code> positions plus their <code>camera_*</code> offsets go into <code>characters.bf</code>/<code>dad</code>/<code>gf</code>. If <code>hide_girlfriend</code> is true, the <code>gf</code> entry is left out entirely. Character <code>zIndex</code> isn't stored by Psych, so it's set from the fields on the left (default 300/200/100, matching official stage layering).<br><br>
       <strong>Props from Lua</strong> — <code>makeLuaSprite</code>/<code>makeAnimatedLuaSprite</code> give name, asset path and position; <code>addAnimationByPrefix</code> fills in <code>animations</code>; <code>setScrollFactor</code> fills <code>scroll</code>; <code>addLuaSprite('x', true)</code> (the foreground flag) pushes <code>zIndex</code> above the characters, otherwise props stack below them in call order. This is regex parsing, not a Lua interpreter — loops, variables used as sprite names, and anything built programmatically won't be picked up, so check the result against the script.<br><br>
       <strong>Not carried over</strong> — <code>camera_speed</code> isn't part of the stage schema, it belongs in the song's metadata.json as <code>cameraSpeed</code> (see the Charts tab). Shaders, tweened event animations (like a custom spotlight event), and anything in <code>onEvent</code>/<code>onTimerCompleted</code> are code, not static stage data — you'll need to reimplement that logic directly in your target engine.
+    </div>
+  </section>
+</main>
+
+<main id="chartsPageR" class="page">
+  <section class="panel">
+    <h2><span class="tag from">FROM</span> V-Slice</h2>
+    <p class="sub">Pick which difficulty becomes the Psych chart. Metadata.json is optional but fills in song/character names and BPM properly.</p>
+
+    <label class="first">Chart JSON</label>
+    <div class="file-drop">
+      <span id="chartRFileLabel">No file selected</span>
+      <button id="chartRFileBtn" type="button">Upload .json</button>
+      <input type="file" id="chartRFileInput" accept="application/json,.json">
+    </div>
+    <textarea id="chartRInput" placeholder="{ &quot;version&quot;: &quot;2.0.0&quot;, &quot;notes&quot;: { ... } }" spellcheck="false" style="margin-top:10px;"></textarea>
+
+    <label class="first">Metadata JSON (optional)</label>
+    <div class="file-drop">
+      <span id="metaRFileLabel">No file selected</span>
+      <button id="metaRFileBtn" type="button">Upload .json</button>
+      <input type="file" id="metaRFileInput" accept="application/json,.json">
+    </div>
+    <textarea id="metaRInput" placeholder="{ &quot;songName&quot;: &quot;...&quot;, &quot;timeChanges&quot;: [ ... ] }" spellcheck="false" style="margin-top:10px; height:120px;"></textarea>
+
+    <label class="first">Difficulty to export</label>
+    <select id="chartRDifficulty">
+      <option value="easy">easy</option>
+      <option value="normal" selected>normal</option>
+      <option value="hard">hard</option>
+    </select>
+
+    <label class="first">
+      <input type="checkbox" id="chartRNeedsVoices" checked style="width:auto; margin-right:6px;">Needs voices
+    </label>
+
+    <button id="chartRConvertBtn" type="button">Convert chart</button>
+    <div id="chartRStatus"></div>
+  </section>
+
+  <section class="panel">
+    <h2><span class="tag to">TO</span> Psych Engine</h2>
+    <p class="sub">One chart.json, in Psych's section format.</p>
+
+    <div id="chartROutputWrap">
+      <div class="empty-state">Convert a chart to see the output here.</div>
+    </div>
+
+    <div class="output-actions" id="chartROutputActions" style="display:none;">
+      <button id="chartRCopyBtn" type="button">Copy</button>
+      <button id="chartRDownloadBtn" type="button">Download</button>
+    </div>
+
+    <div class="notes-info">
+      <strong>Section reconstruction</strong> — notes are grouped into fixed 4-beat sections walked forward from <code>timeChanges</code> (or a flat 100 BPM if no metadata is given). Each section's <code>mustHitSection</code> is set by majority vote of that section's notes, and directions are shifted back accordingly — this is the exact inverse of the Charts (forward) conversion, so a round trip should match. Trailing empty sections at the end of the original chart aren't reconstructed since there's no note data to anchor them.<br><br>
+      <strong>Events</strong> — PlayAnimation and ZoomCamera convert back directly (ZoomCamera reconstructs the delta from consecutive absolute zoom values). FlashCamera always restores as "Flash Camera" — Psych's "flash" event name is indistinguishable from it once merged, so if your original used "flash" you'll want to rename it back by hand. Anything passed through as raw <code>v.p1</code>/<code>v.p2</code> on the way in restores with its original name exactly.
+    </div>
+  </section>
+</main>
+
+<main id="charactersPageR" class="page">
+  <section class="panel">
+    <h2><span class="tag from">FROM</span> V-Slice</h2>
+    <p class="sub">Fields Psych needs that V-Slice doesn't store are editable below.</p>
+
+    <label class="first">Character file</label>
+    <div class="file-drop">
+      <span id="charRFileLabel">No file selected</span>
+      <button id="charRFileBtn" type="button">Upload .json</button>
+      <input type="file" id="charRFileInput" accept="application/json,.json">
+    </div>
+    <textarea id="charRInput" placeholder="{ &quot;name&quot;: &quot;Boyfriend&quot;, &quot;animations&quot;: [ ... ] }" spellcheck="false"></textarea>
+
+    <label class="first">Fields Psych needs</label>
+    <div class="field-row">
+      <div>
+        <label class="first">Image path</label>
+        <input type="text" id="charRImage" placeholder="characters/BOYFRIEND">
+      </div>
+      <div>
+        <label class="first">Health icon</label>
+        <input type="text" id="charRHealthicon" placeholder="bf">
+      </div>
+    </div>
+    <div class="field-row">
+      <div>
+        <label class="first">Scale</label>
+        <input type="text" id="charRScale" placeholder="1">
+      </div>
+      <div>
+        <label class="first">Sing duration</label>
+        <input type="text" id="charRSingDuration" placeholder="4">
+      </div>
+    </div>
+    <div class="field-row">
+      <div>
+        <label class="first">Position X</label>
+        <input type="text" id="charRPosX" placeholder="0">
+      </div>
+      <div>
+        <label class="first">Position Y</label>
+        <input type="text" id="charRPosY" placeholder="0">
+      </div>
+    </div>
+    <div class="field-row">
+      <div>
+        <label class="first">Health bar color</label>
+        <input type="text" id="charRHbColor" placeholder="49,176,209">
+      </div>
+      <div>
+        <label class="first">Default fps (if missing)</label>
+        <input type="text" id="charRFps" placeholder="24">
+      </div>
+    </div>
+
+    <button id="charRConvertBtn" type="button">Convert character</button>
+    <div id="charRStatus"></div>
+  </section>
+
+  <section class="panel">
+    <h2><span class="tag to">TO</span> Psych Engine</h2>
+    <p class="sub">One file, ready to drop in the characters folder.</p>
+
+    <div id="charROutputWrap">
+      <div class="empty-state">Convert a character to see the output here.</div>
+    </div>
+
+    <div class="output-actions" id="charROutputActions" style="display:none;">
+      <button id="charRCopyBtn" type="button">Copy</button>
+      <button id="charRDownloadBtn" type="button">Download</button>
+    </div>
+
+    <div class="notes-info">
+      <strong>Field mapping</strong> — each animation's <code>name</code> becomes <code>anim</code>, <code>prefix</code> becomes the atlas <code>name</code>, <code>looped</code> becomes <code>loop</code>, and <code>offsets</code>/<code>frameRate</code>/<code>indices</code> carry over exactly (missing fps falls back to the default above). <code>assetPath</code> has its <code>shared:</code> prefix stripped to become <code>image</code>, unless you override it on the left.<br><br>
+      <strong>Not reconstructable</strong> — <code>cameraOffsets</code> and the <code>death</code> block have no home in Psych's character schema (that data lives in the stage file instead, or isn't used at all), so they're dropped. <code>deathLoop</code>/<code>deathConfirm</code> states pass through as extra animation entries, but base Psych won't reference them as anything special.
+    </div>
+  </section>
+</main>
+
+<main id="stagesPageR" class="page">
+  <section class="panel">
+    <h2><span class="tag from">FROM</span> V-Slice</h2>
+    <p class="sub">Props become a generated Lua <code>onCreate()</code> — check it against your actual assets before using it.</p>
+
+    <label class="first">Stage JSON</label>
+    <div class="file-drop">
+      <span id="stageRFileLabel">No file selected</span>
+      <button id="stageRFileBtn" type="button">Upload .json</button>
+      <input type="file" id="stageRFileInput" accept="application/json,.json">
+    </div>
+    <textarea id="stageRInput" placeholder="{ &quot;props&quot;: [ ... ], &quot;characters&quot;: { ... } }" spellcheck="false" style="margin-top:10px;"></textarea>
+
+    <label class="first">Pixel stage</label>
+    <select id="stageRIsPixel">
+      <option value="auto">Auto (from props' isPixel)</option>
+      <option value="true">Yes</option>
+      <option value="false">No</option>
+    </select>
+
+    <label class="first">Camera speed</label>
+    <input type="text" id="stageRCameraSpeed" placeholder="1">
+
+    <button id="stageRConvertBtn" type="button">Convert stage</button>
+    <div id="stageRStatus"></div>
+  </section>
+
+  <section class="panel">
+    <h2><span class="tag to">TO</span> Psych Engine</h2>
+    <p class="sub">Both a stage.json and the Lua script it needs.</p>
+
+    <div class="tabs">
+      <button id="tabStageRJson" class="active" type="button">stage.json</button>
+      <button id="tabStageRLua" type="button">stage.lua</button>
+    </div>
+
+    <div id="stageROutputWrap">
+      <div class="empty-state">Convert a stage to see the output here.</div>
+    </div>
+
+    <div class="output-actions" id="stageROutputActions" style="display:none;">
+      <button id="stageRCopyBtn" type="button">Copy</button>
+      <button id="stageRDownloadBtn" type="button">Download</button>
+    </div>
+
+    <div id="stageRDynamicNotes"></div>
+
+    <div class="notes-info">
+      <strong>Field mapping</strong> — <code>cameraZoom</code> becomes <code>defaultZoom</code>, each character's <code>position</code>/<code>cameraOffsets</code> go back into <code>boyfriend</code>/<code>opponent</code>/<code>girlfriend</code> and <code>camera_*</code>, and a missing <code>gf</code> entry sets <code>hide_girlfriend: true</code>.<br><br>
+      <strong>Lua generation</strong> — props are sorted by <code>zIndex</code> and turned into <code>makeLuaSprite</code>/<code>makeAnimatedLuaSprite</code> + <code>addAnimationByPrefix</code> + <code>setScrollFactor</code> + <code>addLuaSprite</code>, with the foreground flag set for any prop whose zIndex is above the highest character zIndex. Non-default <code>scale</code> can't be reproduced (Psych's <code>setGraphicSize</code> needs the sprite's real pixel dimensions, which isn't in the JSON) — flagged props are listed after converting. <code>animType</code> other than "sparrow" is generated the same way regardless, since Psych only understands sparrow atlases and single images — double check those manually. <code>danceEvery</code>, blend modes, and any <code>lowQuality</code> gating aren't reconstructed since Psych stores none of that in the stage JSON either.
     </div>
   </section>
 </main>
@@ -930,20 +1150,34 @@ document.getElementById('downloadBtn').addEventListener('click', function () {
   URL.revokeObjectURL(url);
 });
 
-var pageIds = ['chartsPage', 'charactersPage', 'stagesPage'];
-var navIds = ['navCharts', 'navCharacters', 'navStages'];
+var DIR_PAGES = {
+  forward: ['chartsPage', 'charactersPage', 'stagesPage'],
+  reverse: ['chartsPageR', 'charactersPageR', 'stagesPageR']
+};
+var currentDir = 'forward';
+var currentTool = 0;
 
-function activatePage(index) {
-  for (var i = 0; i < pageIds.length; i++) {
-    var isActive = i === index;
-    document.getElementById(pageIds[i]).classList.toggle('active', isActive);
-    document.getElementById(navIds[i]).classList.toggle('active', isActive);
-  }
+function showPage() {
+  ['forward', 'reverse'].forEach(function (dir) {
+    DIR_PAGES[dir].forEach(function (id) {
+      document.getElementById(id).classList.remove('active');
+    });
+  });
+  document.getElementById(DIR_PAGES[currentDir][currentTool]).classList.add('active');
+
+  document.getElementById('navCharts').classList.toggle('active', currentTool === 0);
+  document.getElementById('navCharacters').classList.toggle('active', currentTool === 1);
+  document.getElementById('navStages').classList.toggle('active', currentTool === 2);
+
+  document.getElementById('navDirForward').classList.toggle('active', currentDir === 'forward');
+  document.getElementById('navDirReverse').classList.toggle('active', currentDir === 'reverse');
 }
 
-document.getElementById('navCharts').addEventListener('click', function () { activatePage(0); });
-document.getElementById('navCharacters').addEventListener('click', function () { activatePage(1); });
-document.getElementById('navStages').addEventListener('click', function () { activatePage(2); });
+document.getElementById('navDirForward').addEventListener('click', function () { currentDir = 'forward'; showPage(); });
+document.getElementById('navDirReverse').addEventListener('click', function () { currentDir = 'reverse'; showPage(); });
+document.getElementById('navCharts').addEventListener('click', function () { currentTool = 0; showPage(); });
+document.getElementById('navCharacters').addEventListener('click', function () { currentTool = 1; showPage(); });
+document.getElementById('navStages').addEventListener('click', function () { currentTool = 2; showPage(); });
 
 var lastCharResult = null;
 
@@ -1002,8 +1236,8 @@ function convertPsychCharacter(psychJson, meta) {
     outAnims.push(outAnim);
   }
 
-  var camX = meta.cameraOffsetX !== null ? meta.cameraOffsetX : (psychJson.camera_position ? psychJson.camera_position[0] : 0);
-  var camY = meta.cameraOffsetY !== null ? meta.cameraOffsetY : (psychJson.camera_position ? psychJson.camera_position[1] : 0);
+  var camX = meta.cameraOffsetX !== null ? meta.cameraOffsetX : 0;
+  var camY = meta.cameraOffsetY !== null ? meta.cameraOffsetY : 0;
 
   var out = {
     version: '1.0.0',
@@ -1088,12 +1322,8 @@ function trySuggestCharFields() {
     var parsed = JSON.parse(raw);
     var nameField = document.getElementById('charName');
     var assetField = document.getElementById('charAssetPath');
-    var camXField = document.getElementById('charCamOffsetX');
-    var camYField = document.getElementById('charCamOffsetY');
     if (!nameField.value && parsed.image) nameField.value = guessDisplayName(parsed.image);
     if (!assetField.value && parsed.image) assetField.value = guessAssetPath(parsed.image);
-    if (!camXField.value && Array.isArray(parsed.camera_position)) camXField.value = parsed.camera_position[0];
-    if (!camYField.value && Array.isArray(parsed.camera_position)) camYField.value = parsed.camera_position[1];
   } catch (err) {
     return;
   }
@@ -1426,6 +1656,549 @@ document.getElementById('stageDownloadBtn').addEventListener('click', function (
   var a = document.createElement('a');
   a.href = url;
   a.download = name + '-stage.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+function roundTimeR(t) {
+  return Math.round(t * 1000) / 1000;
+}
+
+function findSectionIndex(sections, t) {
+  for (var i = 0; i < sections.length; i++) {
+    if (t >= sections[i].startTime - 0.5 && t < sections[i].endTime - 0.5) return i;
+  }
+  return sections.length - 1;
+}
+
+function buildSectionsFromTimeChanges(timeChanges, notes) {
+  var tc = (timeChanges && timeChanges.length ? timeChanges : [{ t: 0, b: 0, bpm: 100 }]).slice().sort(function (a, b) { return a.t - b.t; });
+  var sections = [];
+  var segIndex = 0;
+  var currentTime = tc[0].t;
+  var lastNoteTime = notes.length ? notes[notes.length - 1].t : currentTime;
+  var previousBpm = null;
+
+  while (currentTime <= lastNoteTime + 1 || sections.length === 0) {
+    while (segIndex + 1 < tc.length && tc[segIndex + 1].t <= currentTime + 0.5) segIndex++;
+    var currentBpm = tc[segIndex].bpm;
+    var msPerBeat = 60000 / currentBpm;
+    var sectionDuration = 4 * msPerBeat;
+    var sectionEnd = currentTime + sectionDuration;
+    var changeBPM = previousBpm !== null && currentBpm !== previousBpm;
+
+    sections.push({ startTime: currentTime, endTime: sectionEnd, bpm: currentBpm, changeBPM: changeBPM });
+    previousBpm = currentBpm;
+    currentTime = sectionEnd;
+
+    if (sections.length > 4000) break;
+  }
+
+  for (var s = 0; s < sections.length; s++) sections[s].notes = [];
+  for (var i = 0; i < notes.length; i++) {
+    var idx = findSectionIndex(sections, notes[i].t);
+    if (idx < 0) idx = sections.length - 1;
+    sections[idx].notes.push(notes[i]);
+  }
+
+  return sections.map(function (sec) {
+    var playerCount = 0, oppCount = 0;
+    sec.notes.forEach(function (n) { if (n.d < 4) playerCount++; else oppCount++; });
+    var mustHit = playerCount >= oppCount;
+
+    var sectionNotes = sec.notes.map(function (n) {
+      var noteData = mustHit ? n.d : (n.d + 4) % 8;
+      var tuple = [roundTimeR(n.t), noteData, n.l || 0];
+      if (n.k) tuple.push(n.k);
+      return tuple;
+    });
+
+    return {
+      sectionBeats: 4,
+      sectionNotes: sectionNotes,
+      gfSection: false,
+      altAnim: false,
+      mustHitSection: mustHit,
+      changeBPM: !!sec.changeBPM,
+      bpm: sec.bpm
+    };
+  });
+}
+
+function mapVSliceEventToPsych(ev, zoomTrackers) {
+  if (ev.e === 'PlayAnimation') {
+    return ['Play Animation', ev.v.anim || '', ev.v.target || 'boyfriend'];
+  }
+  if (ev.e === 'ZoomCamera') {
+    var key = ev.v.target || 'camGame';
+    var prev = zoomTrackers[key] !== undefined ? zoomTrackers[key] : 1;
+    var newZoom = ev.v.zoom !== undefined ? ev.v.zoom : prev;
+    var amount = newZoom - prev;
+    zoomTrackers[key] = newZoom;
+    var p2 = key === 'camGame' ? '' : key;
+    return ['Add Camera Zoom', String(Math.round(amount * 1000) / 1000), p2];
+  }
+  if (ev.e === 'FlashCamera') {
+    var duration = ev.v.duration !== undefined ? ev.v.duration : 0.5;
+    var target = ev.v.target === 'camGame' ? '' : (ev.v.target || '');
+    return ['Flash Camera', String(duration), target];
+  }
+  if (ev.v && (ev.v.p1 !== undefined || ev.v.p2 !== undefined)) {
+    return [ev.e, ev.v.p1 !== undefined ? ev.v.p1 : '', ev.v.p2 !== undefined ? ev.v.p2 : ''];
+  }
+  return [ev.e, '', ''];
+}
+
+function convertVSliceEvents(events) {
+  var byTime = {};
+  var order = [];
+  var zoomTrackers = {};
+
+  (events || []).forEach(function (ev) {
+    var tuple = mapVSliceEventToPsych(ev, zoomTrackers);
+    if (!tuple) return;
+    var t = ev.t;
+    if (!byTime[t]) { byTime[t] = []; order.push(t); }
+    byTime[t].push(tuple);
+  });
+
+  order.sort(function (a, b) { return a - b; });
+  return order.map(function (t) { return [t, byTime[t]]; });
+}
+
+function convertVSliceToPsychChart(chartJson, metaJson, opts) {
+  var diff = opts.difficulty || 'normal';
+  var notes = (chartJson.notes && chartJson.notes[diff]) || [];
+  var timeChanges = metaJson && metaJson.timeChanges ? metaJson.timeChanges : [{ t: 0, b: 0, bpm: 100 }];
+  var speed = (chartJson.scrollSpeed && chartJson.scrollSpeed[diff] !== undefined) ? chartJson.scrollSpeed[diff] : 1;
+
+  var sections = buildSectionsFromTimeChanges(timeChanges, notes);
+  var eventsOut = convertVSliceEvents(chartJson.events || []);
+
+  var characters = (metaJson && metaJson.playData && metaJson.playData.characters) || {};
+
+  var songOut = {
+    player1: characters.player || 'bf',
+    gfVersion: characters.girlfriend || 'gf',
+    notes: sections,
+    events: eventsOut,
+    player2: characters.opponent || 'dad',
+    disableNoteRGB: true,
+    song: (metaJson && metaJson.songName) || 'Song',
+    stage: (metaJson && metaJson.playData && metaJson.playData.stage) || 'stage',
+    needsVoices: opts.needsVoices !== false,
+    speed: speed,
+    bpm: timeChanges.length ? timeChanges[0].bpm : 100
+  };
+
+  return { song: songOut };
+}
+
+var lastChartRResult = null;
+
+function setChartRStatus(text, kind) {
+  var el = document.getElementById('chartRStatus');
+  el.textContent = text;
+  el.className = kind || '';
+}
+
+function renderChartROutput() {
+  var wrap = document.getElementById('chartROutputWrap');
+  var actions = document.getElementById('chartROutputActions');
+  if (!lastChartRResult) {
+    wrap.innerHTML = '<div class="empty-state">Convert a chart to see the output here.</div>';
+    actions.style.display = 'none';
+    return;
+  }
+  wrap.innerHTML = '<textarea id="chartROutputArea" readonly spellcheck="false" style="width:100%;height:480px;"></textarea>';
+  document.getElementById('chartROutputArea').value = JSON.stringify(lastChartRResult, null, 2);
+  actions.style.display = 'flex';
+}
+
+document.getElementById('chartRFileBtn').addEventListener('click', function () { document.getElementById('chartRFileInput').click(); });
+document.getElementById('chartRFileInput').addEventListener('change', function (e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('chartRFileLabel').textContent = file.name;
+  var reader = new FileReader();
+  reader.onload = function (ev) { document.getElementById('chartRInput').value = ev.target.result; };
+  reader.readAsText(file);
+});
+
+document.getElementById('metaRFileBtn').addEventListener('click', function () { document.getElementById('metaRFileInput').click(); });
+document.getElementById('metaRFileInput').addEventListener('change', function (e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('metaRFileLabel').textContent = file.name;
+  var reader = new FileReader();
+  reader.onload = function (ev) { document.getElementById('metaRInput').value = ev.target.result; };
+  reader.readAsText(file);
+});
+
+document.getElementById('chartRConvertBtn').addEventListener('click', function () {
+  var rawChart = document.getElementById('chartRInput').value.trim();
+  if (!rawChart) {
+    setChartRStatus('Paste or upload a V-Slice chart first.', 'err');
+    return;
+  }
+  var chartJson, metaJson;
+  try {
+    chartJson = JSON.parse(rawChart);
+  } catch (err) {
+    setChartRStatus('Chart JSON doesn\'t parse: ' + err.message, 'err');
+    return;
+  }
+  var rawMeta = document.getElementById('metaRInput').value.trim();
+  if (rawMeta) {
+    try {
+      metaJson = JSON.parse(rawMeta);
+    } catch (err) {
+      setChartRStatus('Metadata JSON doesn\'t parse: ' + err.message, 'err');
+      return;
+    }
+  }
+
+  try {
+    var opts = {
+      difficulty: document.getElementById('chartRDifficulty').value,
+      needsVoices: document.getElementById('chartRNeedsVoices').checked
+    };
+    lastChartRResult = convertVSliceToPsychChart(chartJson, metaJson, opts);
+    var sectionCount = lastChartRResult.song.notes.length;
+    setChartRStatus('Converted into ' + sectionCount + ' sections.', 'ok');
+    renderChartROutput();
+  } catch (err) {
+    setChartRStatus('Conversion failed: ' + err.message, 'err');
+  }
+});
+
+document.getElementById('chartRCopyBtn').addEventListener('click', function () {
+  var area = document.getElementById('chartROutputArea');
+  if (!area) return;
+  area.select();
+  document.execCommand('copy');
+  setChartRStatus('Copied chart.json to clipboard.', 'ok');
+});
+
+document.getElementById('chartRDownloadBtn').addEventListener('click', function () {
+  if (!lastChartRResult) return;
+  var name = (lastChartRResult.song.song || 'song').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  var blob = new Blob([JSON.stringify(lastChartRResult, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = name + '-chart.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+function convertVSliceToPsychCharacter(vJson, meta) {
+  var anims = vJson.animations || [];
+  var outAnims = anims.map(function (a) {
+    return {
+      loop: !!a.looped,
+      offsets: Array.isArray(a.offsets) ? a.offsets : [0, 0],
+      anim: a.name,
+      fps: a.frameRate !== undefined ? a.frameRate : meta.fps,
+      name: a.prefix || a.name,
+      indices: Array.isArray(a.indices) ? a.indices : []
+    };
+  });
+
+  var image = meta.image || (vJson.assetPath || '').replace(/^shared:/, '');
+  var hb = meta.hbColor || [0, 0, 0];
+
+  return {
+    animations: outAnims,
+    vocals_file: '',
+    no_antialiasing: false,
+    image: image,
+    position: [meta.posX || 0, meta.posY || 0],
+    healthicon: meta.healthicon || '',
+    flip_x: !!vJson.flipX,
+    healthbar_colors: hb,
+    sing_duration: meta.singDuration !== undefined ? meta.singDuration : 4,
+    scale: meta.scale !== undefined ? meta.scale : 1,
+    _editor_isPlayer: false
+  };
+}
+
+var lastCharRResult = null;
+
+function setCharRStatus(text, kind) {
+  var el = document.getElementById('charRStatus');
+  el.textContent = text;
+  el.className = kind || '';
+}
+
+function readCharRMetaFields() {
+  var hbRaw = document.getElementById('charRHbColor').value.trim();
+  var hb = hbRaw ? hbRaw.split(',').map(function (v) { return toNumber(v, 0); }) : [0, 0, 0];
+  return {
+    image: document.getElementById('charRImage').value.trim(),
+    healthicon: document.getElementById('charRHealthicon').value.trim(),
+    scale: toNumber(document.getElementById('charRScale').value, 1),
+    singDuration: toNumber(document.getElementById('charRSingDuration').value, 4),
+    posX: toNumber(document.getElementById('charRPosX').value, 0),
+    posY: toNumber(document.getElementById('charRPosY').value, 0),
+    hbColor: hb,
+    fps: toNumber(document.getElementById('charRFps').value, 24)
+  };
+}
+
+function renderCharROutput() {
+  var wrap = document.getElementById('charROutputWrap');
+  var actions = document.getElementById('charROutputActions');
+  if (!lastCharRResult) {
+    wrap.innerHTML = '<div class="empty-state">Convert a character to see the output here.</div>';
+    actions.style.display = 'none';
+    return;
+  }
+  wrap.innerHTML = '<textarea id="charROutputArea" readonly spellcheck="false" style="width:100%;height:480px;"></textarea>';
+  document.getElementById('charROutputArea').value = JSON.stringify(lastCharRResult, null, 2);
+  actions.style.display = 'flex';
+}
+
+document.getElementById('charRFileBtn').addEventListener('click', function () { document.getElementById('charRFileInput').click(); });
+document.getElementById('charRFileInput').addEventListener('change', function (e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('charRFileLabel').textContent = file.name;
+  var reader = new FileReader();
+  reader.onload = function (ev) {
+    document.getElementById('charRInput').value = ev.target.result;
+    try {
+      var parsed = JSON.parse(ev.target.result);
+      var imageField = document.getElementById('charRImage');
+      if (!imageField.value && parsed.assetPath) imageField.value = String(parsed.assetPath).replace(/^shared:/, '');
+    } catch (err) {}
+  };
+  reader.readAsText(file);
+});
+
+document.getElementById('charRConvertBtn').addEventListener('click', function () {
+  var raw = document.getElementById('charRInput').value.trim();
+  if (!raw) {
+    setCharRStatus('Paste or upload a V-Slice character first.', 'err');
+    return;
+  }
+  var parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    setCharRStatus('That JSON doesn\'t parse: ' + err.message, 'err');
+    return;
+  }
+  try {
+    var meta = readCharRMetaFields();
+    lastCharRResult = convertVSliceToPsychCharacter(parsed, meta);
+    setCharRStatus('Converted ' + lastCharRResult.animations.length + ' animations.', 'ok');
+    renderCharROutput();
+  } catch (err) {
+    setCharRStatus('Conversion failed: ' + err.message, 'err');
+  }
+});
+
+document.getElementById('charRCopyBtn').addEventListener('click', function () {
+  var area = document.getElementById('charROutputArea');
+  if (!area) return;
+  area.select();
+  document.execCommand('copy');
+  setCharRStatus('Copied character.json to clipboard.', 'ok');
+});
+
+document.getElementById('charRDownloadBtn').addEventListener('click', function () {
+  if (!lastCharRResult) return;
+  var blob = new Blob([JSON.stringify(lastCharRResult, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'character.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+function guessIsPixelFromProps(props) {
+  if (!props || !props.length) return false;
+  return props.every(function (p) { return !!p.isPixel; });
+}
+
+function buildLuaFromProps(props, maxCharZ) {
+  var sorted = (props || []).slice().sort(function (a, b) { return a.zIndex - b.zIndex; });
+  var lines = ['function onCreate()'];
+  var scaleWarnings = [];
+  var nonSparrowWarnings = [];
+
+  sorted.forEach(function (p) {
+    var pos = Array.isArray(p.position) ? p.position : [0, 0];
+    var animated = p.animations && p.animations.length;
+
+    if (animated) {
+      lines.push("\tmakeAnimatedLuaSprite('" + p.name + "', '" + p.assetPath + "', " + pos[0] + ', ' + pos[1] + ')');
+      p.animations.forEach(function (a) {
+        var loopArg = a.looped ? ', true' : '';
+        var fps = a.frameRate !== undefined ? a.frameRate : 24;
+        lines.push("\taddAnimationByPrefix('" + p.name + "', '" + a.name + "', '" + a.prefix + "', " + fps + loopArg + ')');
+      });
+    } else {
+      lines.push("\tmakeLuaSprite('" + p.name + "', '" + p.assetPath + "', " + pos[0] + ', ' + pos[1] + ')');
+    }
+
+    if (Array.isArray(p.scroll) && (p.scroll[0] !== 1 || p.scroll[1] !== 1)) {
+      lines.push("\tsetScrollFactor('" + p.name + "', " + p.scroll[0] + ', ' + p.scroll[1] + ')');
+    }
+
+    if (Array.isArray(p.scale) && (p.scale[0] !== 1 || p.scale[1] !== 1)) {
+      scaleWarnings.push(p.name);
+    }
+
+    if (p.animType && p.animType !== 'sparrow') {
+      nonSparrowWarnings.push(p.name + ' (' + p.animType + ')');
+    }
+
+    var foreground = p.zIndex > maxCharZ;
+    lines.push("\taddLuaSprite('" + p.name + "'" + (foreground ? ', true' : '') + ')');
+    lines.push('');
+  });
+
+  lines.push('end');
+
+  return { text: lines.join('\n'), scaleWarnings: scaleWarnings, nonSparrowWarnings: nonSparrowWarnings };
+}
+
+function convertVSliceToPsychStage(stageJson, meta) {
+  var chars = stageJson.characters || {};
+  var maxCharZ = 0;
+  Object.keys(chars).forEach(function (k) {
+    if (chars[k].zIndex > maxCharZ) maxCharZ = chars[k].zIndex;
+  });
+
+  var isPixel = meta.isPixel === 'true' ? true : (meta.isPixel === 'false' ? false : guessIsPixelFromProps(stageJson.props));
+
+  var out = {
+    directory: stageJson.directory || '',
+    defaultZoom: stageJson.cameraZoom !== undefined ? stageJson.cameraZoom : 1,
+    isPixelStage: isPixel,
+    boyfriend: chars.bf ? chars.bf.position : [0, 0],
+    girlfriend: chars.gf ? chars.gf.position : [0, 0],
+    opponent: chars.dad ? chars.dad.position : [0, 0],
+    hide_girlfriend: !chars.gf,
+    camera_boyfriend: chars.bf ? chars.bf.cameraOffsets : [0, 0],
+    camera_opponent: chars.dad ? chars.dad.cameraOffsets : [0, 0],
+    camera_girlfriend: chars.gf ? chars.gf.cameraOffsets : [0, 0],
+    camera_speed: meta.cameraSpeed !== undefined ? meta.cameraSpeed : 1
+  };
+
+  var luaResult = buildLuaFromProps(stageJson.props || [], maxCharZ);
+
+  return { stage: out, lua: luaResult.text, scaleWarnings: luaResult.scaleWarnings, nonSparrowWarnings: luaResult.nonSparrowWarnings };
+}
+
+var lastStageRResult = null;
+var activeStageRTab = 'json';
+
+function setStageRStatus(text, kind) {
+  var el = document.getElementById('stageRStatus');
+  el.textContent = text;
+  el.className = kind || '';
+}
+
+function renderStageROutput() {
+  var wrap = document.getElementById('stageROutputWrap');
+  var actions = document.getElementById('stageROutputActions');
+
+  if (!lastStageRResult) {
+    wrap.innerHTML = '<div class="empty-state">Convert a stage to see the output here.</div>';
+    actions.style.display = 'none';
+    document.getElementById('stageRDynamicNotes').innerHTML = '';
+    return;
+  }
+
+  wrap.innerHTML = '<textarea id="stageROutputArea" readonly spellcheck="false" style="width:100%;height:420px;"></textarea>';
+  var text = activeStageRTab === 'json' ? JSON.stringify(lastStageRResult.stage, null, 2) : lastStageRResult.lua;
+  document.getElementById('stageROutputArea').value = text;
+  actions.style.display = 'flex';
+
+  var notesHtml = '';
+  if (lastStageRResult.scaleWarnings.length) {
+    notesHtml += '<div class="notes-info"><strong>Scale not reproduced for</strong> — ' + lastStageRResult.scaleWarnings.join(', ') + '. Add setGraphicSize calls by hand for these.</div>';
+  }
+  if (lastStageRResult.nonSparrowWarnings.length) {
+    notesHtml += '<div class="notes-info"><strong>Non-sparrow props (double check these)</strong> — ' + lastStageRResult.nonSparrowWarnings.join(', ') + '.</div>';
+  }
+  document.getElementById('stageRDynamicNotes').innerHTML = notesHtml;
+}
+
+document.getElementById('tabStageRJson').addEventListener('click', function () {
+  activeStageRTab = 'json';
+  document.getElementById('tabStageRJson').classList.add('active');
+  document.getElementById('tabStageRLua').classList.remove('active');
+  renderStageROutput();
+});
+
+document.getElementById('tabStageRLua').addEventListener('click', function () {
+  activeStageRTab = 'lua';
+  document.getElementById('tabStageRLua').classList.add('active');
+  document.getElementById('tabStageRJson').classList.remove('active');
+  renderStageROutput();
+});
+
+document.getElementById('stageRFileBtn').addEventListener('click', function () { document.getElementById('stageRFileInput').click(); });
+document.getElementById('stageRFileInput').addEventListener('change', function (e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('stageRFileLabel').textContent = file.name;
+  var reader = new FileReader();
+  reader.onload = function (ev) { document.getElementById('stageRInput').value = ev.target.result; };
+  reader.readAsText(file);
+});
+
+document.getElementById('stageRConvertBtn').addEventListener('click', function () {
+  var raw = document.getElementById('stageRInput').value.trim();
+  if (!raw) {
+    setStageRStatus('Paste or upload a V-Slice stage JSON first.', 'err');
+    return;
+  }
+  var parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    setStageRStatus('That JSON doesn\'t parse: ' + err.message, 'err');
+    return;
+  }
+  try {
+    var meta = {
+      isPixel: document.getElementById('stageRIsPixel').value,
+      cameraSpeed: toNumber(document.getElementById('stageRCameraSpeed').value, 1)
+    };
+    lastStageRResult = convertVSliceToPsychStage(parsed, meta);
+    var propCount = (parsed.props || []).length;
+    setStageRStatus('Converted ' + propCount + ' props into Lua.', 'ok');
+    renderStageROutput();
+  } catch (err) {
+    setStageRStatus('Conversion failed: ' + err.message, 'err');
+  }
+});
+
+document.getElementById('stageRCopyBtn').addEventListener('click', function () {
+  var area = document.getElementById('stageROutputArea');
+  if (!area) return;
+  area.select();
+  document.execCommand('copy');
+  setStageRStatus('Copied ' + (activeStageRTab === 'json' ? 'stage.json' : 'stage.lua') + ' to clipboard.', 'ok');
+});
+
+document.getElementById('stageRDownloadBtn').addEventListener('click', function () {
+  if (!lastStageRResult) return;
+  var name = (lastStageRResult.stage.directory || 'stage').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  var isJson = activeStageRTab === 'json';
+  var content = isJson ? JSON.stringify(lastStageRResult.stage, null, 2) : lastStageRResult.lua;
+  var filename = isJson ? name + '-stage.json' : name + '-stage.lua';
+  var blob = new Blob([content], { type: isJson ? 'application/json' : 'text/plain' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
 });
