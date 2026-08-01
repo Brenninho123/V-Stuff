@@ -1,6 +1,6 @@
 var CACHE_NAME = 'v-stuff-v1';
 var APP_SHELL = [
-  './v-stuff.html',
+  './index.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
