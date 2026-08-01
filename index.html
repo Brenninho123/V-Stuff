@@ -609,7 +609,7 @@
 
     <div class="notes-info">
       <strong>Field mapping</strong> — <code>defaultZoom</code> becomes <code>cameraZoom</code>, and <code>boyfriend</code>/<code>opponent</code>/<code>girlfriend</code> positions plus their <code>camera_*</code> offsets go into <code>characters.bf</code>/<code>dad</code>/<code>gf</code>. If <code>hide_girlfriend</code> is true, the <code>gf</code> entry is left out entirely. Character <code>zIndex</code> isn't stored by Psych, so it's set from the fields on the left (default 300/200/100, matching official stage layering).<br><br>
-      <strong>Props from Lua</strong> — <code>makeLuaSprite</code>/<code>makeAnimatedLuaSprite</code> give name, asset path and position; <code>addAnimationByPrefix</code> fills in <code>animations</code>; <code>setScrollFactor</code> fills <code>scroll</code>; <code>addLuaSprite('x', true)</code> (the foreground flag) pushes <code>zIndex</code> above the characters, otherwise props stack below them in call order. This is regex parsing, not a Lua interpreter — loops, variables used as sprite names, and anything built programmatically won't be picked up, so check the result against the script.<br><br>
+      <strong>Props from Lua</strong> — <code>makeLuaSprite</code>/<code>makeAnimatedLuaSprite</code> give name, asset path and position; <code>addAnimationByPrefix</code> fills in <code>animations</code> and sets <code>startingAnimation</code> to whichever one gets added first; <code>setScrollFactor</code> fills <code>scroll</code>; <code>addLuaSprite('x', true)</code> (the foreground flag) pushes <code>zIndex</code> above the characters, otherwise props stack below them in call order. <code>atlasSettings</code> is always <code>null</code> and per-animation <code>flipX</code>/<code>flipY</code> default to <code>false</code> since Lua doesn't expose either. This is regex parsing, not a Lua interpreter — loops, variables used as sprite names, and anything built programmatically won't be picked up, so check the result against the script.<br><br>
       <strong>Not carried over</strong> — <code>camera_speed</code> isn't part of the stage schema, it belongs in the song's metadata.json as <code>cameraSpeed</code> (see the Charts tab). Shaders, tweened event animations (like a custom spotlight event), and anything in <code>onEvent</code>/<code>onTimerCompleted</code> are code, not static stage data — you'll need to reimplement that logic directly in your target engine.
     </div>
   </section>
@@ -798,8 +798,8 @@
     <div id="stageRDynamicNotes"></div>
 
     <div class="notes-info">
-      <strong>Field mapping</strong> — <code>cameraZoom</code> becomes <code>defaultZoom</code>, each character's <code>position</code>/<code>cameraOffsets</code> go back into <code>boyfriend</code>/<code>opponent</code>/<code>girlfriend</code> and <code>camera_*</code>, and a missing <code>gf</code> entry sets <code>hide_girlfriend: true</code>.<br><br>
-      <strong>Lua generation</strong> — props are sorted by <code>zIndex</code> and turned into <code>makeLuaSprite</code>/<code>makeAnimatedLuaSprite</code> + <code>addAnimationByPrefix</code> + <code>setScrollFactor</code> + <code>addLuaSprite</code>, with the foreground flag set for any prop whose zIndex is above the highest character zIndex. Non-default <code>scale</code> can't be reproduced (Psych's <code>setGraphicSize</code> needs the sprite's real pixel dimensions, which isn't in the JSON) — flagged props are listed after converting. <code>animType</code> other than "sparrow" is generated the same way regardless, since Psych only understands sparrow atlases and single images — double check those manually. <code>danceEvery</code>, blend modes, and any <code>lowQuality</code> gating aren't reconstructed since Psych stores none of that in the stage JSON either.
+      <strong>Field mapping</strong> — <code>cameraZoom</code> becomes <code>defaultZoom</code>, each character's <code>position</code>/<code>cameraOffsets</code> go back into <code>boyfriend</code>/<code>opponent</code>/<code>girlfriend</code> and <code>camera_*</code>. <code>hide_girlfriend</code> is set to true if there's no <code>gf</code> entry at all, or if it's present with <code>alpha: 0</code> — both show up in real stages.<br><br>
+      <strong>Lua generation</strong> — props are sorted by <code>zIndex</code> (props missing it fall back to their position in the <code>props</code> array, since that's valid too) and turned into <code>makeLuaSprite</code>/<code>makeAnimatedLuaSprite</code> + <code>addAnimationByPrefix</code> + <code>setScrollFactor</code> + <code>addLuaSprite</code>, with the foreground flag set for any prop whose zIndex is above the highest character zIndex. A <code>startingAnimation</code> becomes an <code>objectPlayAnimation</code> call right after the sprite is built. <code>scale</code> works whether it's a single number or an <code>[x,y]</code> pair, but either way it can't be reproduced in Lua (Psych's <code>setGraphicSize</code> needs the sprite's real pixel dimensions, which isn't in the JSON) — flagged props are listed after converting. <code>animType</code> other than "sparrow" is generated the same way regardless, since Psych only understands sparrow atlases and single images — double check those manually. <code>danceEvery</code>, <code>atlasSettings</code>, blend modes, and any <code>lowQuality</code> gating aren't reconstructed since Psych stores none of that in the stage JSON either.
     </div>
   </section>
 </main>
@@ -1397,7 +1397,9 @@ function extractLuaProps(luaSource, isPixelDefault) {
         name: name,
         isPixel: isPixelDefault,
         assetPath: '',
+        atlasSettings: null,
         scroll: [1, 1],
+        startingAnimation: null,
         animations: []
       };
       order.push(name);
@@ -1426,9 +1428,10 @@ function extractLuaProps(luaSource, isPixelDefault) {
   var am;
   while ((am = animRegex.exec(luaSource))) {
     var prop2 = ensureProp(am[1]);
-    var animEntry = { name: am[2], prefix: am[3], frameRate: parseInt(am[4], 10) };
+    var animEntry = { name: am[2], prefix: am[3], frameRate: parseInt(am[4], 10), flipX: false, flipY: false };
     if (am[5] === 'true') animEntry.looped = true;
     prop2.animations.push(animEntry);
+    if (prop2.startingAnimation === null) prop2.startingAnimation = am[2];
   }
 
   var scrollRegex = /setScrollFactor\('([^']+)',\s*(-?[\d.]+),\s*(-?[\d.]+)\)/g;
@@ -2023,8 +2026,20 @@ function guessIsPixelFromProps(props) {
   return props.every(function (p) { return !!p.isPixel; });
 }
 
-function buildLuaFromProps(props, maxCharZ) {
-  var sorted = (props || []).slice().sort(function (a, b) { return a.zIndex - b.zIndex; });
+function normalizeScale(scale) {
+  if (Array.isArray(scale)) return [scale[0], scale.length > 1 ? scale[1] : scale[0]];
+  if (typeof scale === 'number') return [scale, scale];
+  return [1, 1];
+}
+
+function buildLuaFromProps(propsIn, maxCharZ) {
+  var props = (propsIn || []).map(function (p, idx) {
+    var copy = {};
+    for (var k in p) copy[k] = p[k];
+    if (copy.zIndex === undefined || copy.zIndex === null) copy.zIndex = idx;
+    return copy;
+  });
+  var sorted = props.slice().sort(function (a, b) { return a.zIndex - b.zIndex; });
   var lines = ['function onCreate()'];
   var scaleWarnings = [];
   var nonSparrowWarnings = [];
@@ -2040,6 +2055,9 @@ function buildLuaFromProps(props, maxCharZ) {
         var fps = a.frameRate !== undefined ? a.frameRate : 24;
         lines.push("\taddAnimationByPrefix('" + p.name + "', '" + a.name + "', '" + a.prefix + "', " + fps + loopArg + ')');
       });
+      if (p.startingAnimation) {
+        lines.push("\tobjectPlayAnimation('" + p.name + "', '" + p.startingAnimation + "')");
+      }
     } else {
       lines.push("\tmakeLuaSprite('" + p.name + "', '" + p.assetPath + "', " + pos[0] + ', ' + pos[1] + ')');
     }
@@ -2048,7 +2066,8 @@ function buildLuaFromProps(props, maxCharZ) {
       lines.push("\tsetScrollFactor('" + p.name + "', " + p.scroll[0] + ', ' + p.scroll[1] + ')');
     }
 
-    if (Array.isArray(p.scale) && (p.scale[0] !== 1 || p.scale[1] !== 1)) {
+    var scaleXY = normalizeScale(p.scale);
+    if (scaleXY[0] !== 1 || scaleXY[1] !== 1) {
       scaleWarnings.push(p.name);
     }
 
@@ -2074,6 +2093,7 @@ function convertVSliceToPsychStage(stageJson, meta) {
   });
 
   var isPixel = meta.isPixel === 'true' ? true : (meta.isPixel === 'false' ? false : guessIsPixelFromProps(stageJson.props));
+  var gfHidden = !chars.gf || chars.gf.alpha === 0;
 
   var out = {
     directory: stageJson.directory || '',
@@ -2082,7 +2102,7 @@ function convertVSliceToPsychStage(stageJson, meta) {
     boyfriend: chars.bf ? chars.bf.position : [0, 0],
     girlfriend: chars.gf ? chars.gf.position : [0, 0],
     opponent: chars.dad ? chars.dad.position : [0, 0],
-    hide_girlfriend: !chars.gf,
+    hide_girlfriend: gfHidden,
     camera_boyfriend: chars.bf ? chars.bf.cameraOffsets : [0, 0],
     camera_opponent: chars.dad ? chars.dad.cameraOffsets : [0, 0],
     camera_girlfriend: chars.gf ? chars.gf.cameraOffsets : [0, 0],
