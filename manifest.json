@@ -2,7 +2,7 @@
   "name": "V Stuff",
   "short_name": "V Stuff",
   "description": "Converts Psych Engine charts, characters, and stages to V-Slice format.",
-  "start_url": "./v-stuff.html",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#121118",
