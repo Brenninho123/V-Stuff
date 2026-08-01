@@ -445,7 +445,7 @@
     </div>
 
     <div class="notes-info">
-      <strong>Event mapping</strong> — Play Animation and Add Camera Zoom convert directly. Flash Camera / flash become FlashCamera. Anything else (Philly Glow, Cinematics, custom stage events) passes through with its original name under <code>v.p1</code> / <code>v.p2</code> so nothing is silently dropped — check the console list after converting and wire those up in your engine fork as needed.
+      <strong>Event mapping</strong> — Play Animation and Add Camera Zoom convert directly; the target character becomes V-Slice's role name (<code>opponent</code>/<code>player</code>/<code>girlfriend</code> — confirmed against a real V-Slice chart, not just guessed). Flash Camera / flash become FlashCamera. Anything else (Philly Glow, Cinematics, custom stage events) passes through with its original name under <code>v.p1</code> / <code>v.p2</code> so nothing is silently dropped — check the console list after converting and wire those up in your engine fork as needed.
     </div>
   </section>
 </main>
@@ -665,8 +665,8 @@
     </div>
 
     <div class="notes-info">
-      <strong>Section reconstruction</strong> — notes are grouped into fixed 4-beat sections walked forward from <code>timeChanges</code> (or a flat 100 BPM if no metadata is given). Each section's <code>mustHitSection</code> is set by majority vote of that section's notes, and directions are shifted back accordingly — this is the exact inverse of the Charts (forward) conversion, so a round trip should match. Trailing empty sections at the end of the original chart aren't reconstructed since there's no note data to anchor them.<br><br>
-      <strong>Events</strong> — PlayAnimation and ZoomCamera convert back directly (ZoomCamera reconstructs the delta from consecutive absolute zoom values). FlashCamera always restores as "Flash Camera" — Psych's "flash" event name is indistinguishable from it once merged, so if your original used "flash" you'll want to rename it back by hand. Anything passed through as raw <code>v.p1</code>/<code>v.p2</code> on the way in restores with its original name exactly.
+      <strong>Section reconstruction</strong> — notes are grouped into fixed 4-beat sections walked forward from <code>timeChanges</code> (or a flat 100 BPM if no metadata is given). Each section's <code>mustHitSection</code> is set by majority vote of that section's notes, and directions are shifted back accordingly — this is the exact inverse of the Charts (forward) conversion, so a round trip should match. Trailing empty sections at the end of the original chart aren't reconstructed since there's no note data to anchor them. Not every difficulty needs notes — the dropdown auto-picks the first one (normal, then hard, then easy) that actually has any once you paste or upload a chart.<br><br>
+      <strong>Events</strong> — PlayAnimation and ZoomCamera convert back directly (ZoomCamera reconstructs the delta from consecutive absolute zoom values; PlayAnimation's role name — <code>opponent</code>/<code>player</code>/<code>girlfriend</code> — maps back to <code>dad</code>/<code>boyfriend</code>/<code>gf</code>). FlashCamera always restores as "Flash Camera" — Psych's "flash" event name is indistinguishable from it once merged, so if your original used "flash" you'll want to rename it back by hand. FocusCamera isn't a native Psych event, so it comes through as-is with the focused character guessed from its numeric <code>char</code> index (0/1/2 → dad/boyfriend/girlfriend, inferred from typical ordering, not confirmed) and the rest of its data (x, y, duration, ease) packed as JSON in the second slot — you'll need a custom event handler to use it. Any other event Psych can't natively represent — SetCameraBop and anything not covered above — comes through the same way: full data preserved as JSON rather than dropped, so check those events after converting.
     </div>
   </section>
 </main>
@@ -853,11 +853,11 @@ function mapNoteKind(kind) {
 }
 
 function mapCharacterTarget(name) {
-  if (!name) return 'boyfriend';
+  if (!name) return 'player';
   var lower = String(name).toLowerCase();
-  if (lower === 'dad' || lower === 'opponent') return 'dad';
-  if (lower === 'gf' || lower === 'girlfriend') return 'gf';
-  return 'boyfriend';
+  if (lower === 'dad' || lower === 'opponent') return 'opponent';
+  if (lower === 'gf' || lower === 'girlfriend') return 'girlfriend';
+  return 'player';
 }
 
 function roundTime(t) {
@@ -1728,9 +1728,23 @@ function buildSectionsFromTimeChanges(timeChanges, notes) {
   });
 }
 
+function vSliceTargetToPsychName(target) {
+  if (!target) return 'boyfriend';
+  var lower = String(target).toLowerCase();
+  if (lower === 'opponent' || lower === 'dad') return 'dad';
+  if (lower === 'girlfriend' || lower === 'gf') return 'gf';
+  return 'boyfriend';
+}
+
+function vSliceCharIndexToPsychName(index) {
+  if (index === 0) return 'dad';
+  if (index === 2) return 'gf';
+  return 'boyfriend';
+}
+
 function mapVSliceEventToPsych(ev, zoomTrackers) {
   if (ev.e === 'PlayAnimation') {
-    return ['Play Animation', ev.v.anim || '', ev.v.target || 'boyfriend'];
+    return ['Play Animation', ev.v.anim || '', vSliceTargetToPsychName(ev.v.target)];
   }
   if (ev.e === 'ZoomCamera') {
     var key = ev.v.target || 'camGame';
@@ -1746,8 +1760,17 @@ function mapVSliceEventToPsych(ev, zoomTrackers) {
     var target = ev.v.target === 'camGame' ? '' : (ev.v.target || '');
     return ['Flash Camera', String(duration), target];
   }
+  if (ev.e === 'FocusCamera') {
+    var charName = ev.v.char !== undefined ? vSliceCharIndexToPsychName(ev.v.char) : 'boyfriend';
+    var rest = {};
+    for (var k in ev.v) { if (k !== 'char') rest[k] = ev.v[k]; }
+    return ['FocusCamera', charName, JSON.stringify(rest)];
+  }
   if (ev.v && (ev.v.p1 !== undefined || ev.v.p2 !== undefined)) {
     return [ev.e, ev.v.p1 !== undefined ? ev.v.p1 : '', ev.v.p2 !== undefined ? ev.v.p2 : ''];
+  }
+  if (ev.v && Object.keys(ev.v).length) {
+    return [ev.e, '', JSON.stringify(ev.v)];
   }
   return [ev.e, '', ''];
 }
@@ -1824,9 +1847,27 @@ document.getElementById('chartRFileInput').addEventListener('change', function (
   if (!file) return;
   document.getElementById('chartRFileLabel').textContent = file.name;
   var reader = new FileReader();
-  reader.onload = function (ev) { document.getElementById('chartRInput').value = ev.target.result; };
+  reader.onload = function (ev) {
+    document.getElementById('chartRInput').value = ev.target.result;
+    trySuggestChartRDifficulty();
+  };
   reader.readAsText(file);
 });
+document.getElementById('chartRInput').addEventListener('blur', trySuggestChartRDifficulty);
+
+function trySuggestChartRDifficulty() {
+  var raw = document.getElementById('chartRInput').value.trim();
+  if (!raw) return;
+  try {
+    var parsed = JSON.parse(raw);
+    var notes = parsed.notes || {};
+    var order = ['normal', 'hard', 'easy'];
+    var best = order.find(function (d) { return notes[d] && notes[d].length; });
+    if (best) document.getElementById('chartRDifficulty').value = best;
+  } catch (err) {
+    return;
+  }
+}
 
 document.getElementById('metaRFileBtn').addEventListener('click', function () { document.getElementById('metaRFileInput').click(); });
 document.getElementById('metaRFileInput').addEventListener('change', function (e) {
