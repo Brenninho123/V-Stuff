@@ -666,7 +666,7 @@
 
     <div class="notes-info">
       <strong>Section reconstruction</strong> — notes are grouped into fixed 4-beat sections walked forward from <code>timeChanges</code> (or a flat 100 BPM if no metadata is given). Each section's <code>mustHitSection</code> is set by majority vote of that section's notes, and directions are shifted back accordingly — this is the exact inverse of the Charts (forward) conversion, so a round trip should match. Trailing empty sections at the end of the original chart aren't reconstructed since there's no note data to anchor them. Not every difficulty needs notes — the dropdown auto-picks the first one (normal, then hard, then easy) that actually has any once you paste or upload a chart.<br><br>
-      <strong>Events</strong> — PlayAnimation and ZoomCamera convert back directly (ZoomCamera reconstructs the delta from consecutive absolute zoom values; PlayAnimation's role name — <code>opponent</code>/<code>player</code>/<code>girlfriend</code> — maps back to <code>dad</code>/<code>boyfriend</code>/<code>gf</code>). FlashCamera always restores as "Flash Camera" — Psych's "flash" event name is indistinguishable from it once merged, so if your original used "flash" you'll want to rename it back by hand. FocusCamera isn't a native Psych event, so it comes through as-is with the focused character guessed from its numeric <code>char</code> index (0/1/2 → dad/boyfriend/girlfriend, inferred from typical ordering, not confirmed) and the rest of its data (x, y, duration, ease) packed as JSON in the second slot — you'll need a custom event handler to use it. Any other event Psych can't natively represent — SetCameraBop and anything not covered above — comes through the same way: full data preserved as JSON rather than dropped, so check those events after converting.
+      <strong>Events</strong> — PlayAnimation and ZoomCamera convert back directly (ZoomCamera reconstructs the delta from consecutive absolute zoom values, keyed by its <code>mode</code> field — the easing curve itself, whether it's one combined name like "expoOut" or split into <code>ease</code> + <code>easeDir</code>, doesn't carry over either way since Psych's "Add Camera Zoom" has no easing concept at all). PlayAnimation's role name — <code>opponent</code>/<code>player</code>/<code>girlfriend</code> — maps back to <code>dad</code>/<code>boyfriend</code>/<code>gf</code>. ScrollSpeed becomes "Change Scroll Speed" with the new speed and strumline (duration/easing are dropped for the same reason). FlashCamera always restores as "Flash Camera" — Psych's "flash" event name is indistinguishable from it once merged, so if your original used "flash" you'll want to rename it back by hand. FocusCamera isn't a native Psych event, so it comes through as-is with the focused character guessed from its numeric <code>char</code> index (0/1/2 → dad/boyfriend/girlfriend, inferred from typical ordering, not confirmed) and the rest of its data (x, y, duration, ease) packed as JSON in the second slot — you'll need a custom event handler to use it. Any other event Psych can't natively represent — SetCameraBop and anything not covered above — comes through the same way: full data preserved as JSON rather than dropped, so check those events after converting.
     </div>
   </section>
 </main>
@@ -882,7 +882,7 @@ function mapSingleEvent(name, p1, p2, time, zoomState) {
     return [{
       t: roundTime(time),
       e: 'ZoomCamera',
-      v: { ease: 'linear', duration: 0, zoom: Math.round(zoomState[key] * 1000) / 1000, target: key === 'default' ? 'camGame' : key }
+      v: { ease: 'linear', duration: 0, zoom: Math.round(zoomState[key] * 1000) / 1000, mode: key === 'default' ? 'stage' : key }
     }];
   }
 
@@ -1747,12 +1747,12 @@ function mapVSliceEventToPsych(ev, zoomTrackers) {
     return ['Play Animation', ev.v.anim || '', vSliceTargetToPsychName(ev.v.target)];
   }
   if (ev.e === 'ZoomCamera') {
-    var key = ev.v.target || 'camGame';
+    var key = ev.v.mode || 'stage';
     var prev = zoomTrackers[key] !== undefined ? zoomTrackers[key] : 1;
     var newZoom = ev.v.zoom !== undefined ? ev.v.zoom : prev;
     var amount = newZoom - prev;
     zoomTrackers[key] = newZoom;
-    var p2 = key === 'camGame' ? '' : key;
+    var p2 = key === 'stage' ? '' : key;
     return ['Add Camera Zoom', String(Math.round(amount * 1000) / 1000), p2];
   }
   if (ev.e === 'FlashCamera') {
@@ -1765,6 +1765,11 @@ function mapVSliceEventToPsych(ev, zoomTrackers) {
     var rest = {};
     for (var k in ev.v) { if (k !== 'char') rest[k] = ev.v[k]; }
     return ['FocusCamera', charName, JSON.stringify(rest)];
+  }
+  if (ev.e === 'ScrollSpeed') {
+    var strumline = ev.v.strumline && ev.v.strumline !== 'both' ? ev.v.strumline : '';
+    var scrollValue = ev.v.scroll !== undefined ? ev.v.scroll : 1;
+    return ['Change Scroll Speed', String(scrollValue), strumline];
   }
   if (ev.v && (ev.v.p1 !== undefined || ev.v.p2 !== undefined)) {
     return [ev.e, ev.v.p1 !== undefined ? ev.v.p1 : '', ev.v.p2 !== undefined ? ev.v.p2 : ''];
