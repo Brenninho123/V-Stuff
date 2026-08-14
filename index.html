@@ -498,6 +498,7 @@
         <label class="first">Render type</label>
         <select id="charRenderType">
           <option value="multianimateatlas">multianimateatlas</option>
+          <option value="animateatlas">animateatlas</option>
           <option value="packeranimation">packeranimation</option>
           <option value="sparrow">sparrow</option>
         </select>
@@ -556,8 +557,8 @@
     </div>
 
     <div class="notes-info">
-      <strong>Field mapping</strong> — each animation's <code>anim</code> becomes <code>name</code>, its atlas <code>name</code> becomes <code>prefix</code>, <code>loop</code> becomes <code>looped</code>, and per-animation <code>offsets</code> carry over exactly (no shared default is assumed). An animation whose id contains "death" is renamed to <code>firstDeath</code>/<code>deathLoop</code>/<code>deathConfirm</code> and a <code>death</code> block is added — Psych usually only has one death animation, so you'll likely need to create the loop/confirm states yourself.<br><br>
-      <strong>Not carried over</strong> — <code>position</code> (belongs in the stage file, not the character), <code>healthicon</code> / <code>healthbar_colors</code> (no field in this schema), <code>no_antialiasing</code>, <code>scale</code>, <code>sing_duration</code>, <code>vocals_file</code>. Set these directly in the output if your fork supports them.
+      <strong>Field mapping</strong> — each animation's <code>anim</code> becomes <code>name</code>, its atlas <code>name</code> becomes <code>prefix</code>, <code>loop</code> becomes <code>looped</code>, and per-animation <code>offsets</code>/<code>indices</code> (as <code>frameIndices</code>) carry over exactly (no shared default is assumed). An animation whose id contains "death" is renamed to <code>firstDeath</code>/<code>deathLoop</code>/<code>deathConfirm</code> and a <code>death</code> block is added — Psych usually only has one death animation, so you'll likely need to create the loop/confirm states yourself. <code>scale</code> and <code>sing_duration</code> map directly to <code>scale</code>/<code>singTime</code> (confirmed real fields, not guesses), <code>healthicon</code> becomes <code>healthIcon: {id: ...}</code>, and <code>startingAnimation</code> is set to whichever animation comes first.<br><br>
+      <strong>Not carried over</strong> — <code>position</code> (belongs in the stage file, not the character) and <code>healthbar_colors</code> (no field in this schema). Set these directly in the output if your fork supports them.
     </div>
   </section>
 </main>
@@ -632,7 +633,7 @@
 
     <div class="notes-info">
       <strong>Field mapping</strong> — <code>defaultZoom</code> becomes <code>cameraZoom</code>, and <code>boyfriend</code>/<code>opponent</code>/<code>girlfriend</code> positions plus their <code>camera_*</code> offsets go into <code>characters.bf</code>/<code>dad</code>/<code>gf</code>. If <code>hide_girlfriend</code> is true, the <code>gf</code> entry is left out entirely. Character <code>zIndex</code> isn't stored by Psych, so it's set from the fields on the left (default 300/200/100, matching official stage layering).<br><br>
-      <strong>Props from Lua</strong> — <code>makeLuaSprite</code>/<code>makeAnimatedLuaSprite</code> give name, asset path and position; <code>addAnimationByPrefix</code> fills in <code>animations</code> and sets <code>startingAnimation</code> to whichever one gets added first; <code>setScrollFactor</code> fills <code>scroll</code>; <code>addLuaSprite('x', true)</code> (the foreground flag) pushes <code>zIndex</code> above the characters, otherwise props stack below them in call order. <code>atlasSettings</code> is always <code>null</code> and per-animation <code>flipX</code>/<code>flipY</code> default to <code>false</code> since Lua doesn't expose either. This is regex parsing, not a Lua interpreter — loops, variables used as sprite names, and anything built programmatically won't be picked up, so check the result against the script.<br><br>
+      <strong>Props from Lua</strong> — <code>makeLuaSprite</code>/<code>makeAnimatedLuaSprite</code> give name, asset path and position; <code>addAnimationByPrefix</code> fills in <code>animations</code> and sets <code>startingAnimation</code> to whichever one gets added first; <code>addAnimationByIndices</code> is picked up the same way but stores its frame list as <code>frameIndices</code>; <code>setScrollFactor</code> fills <code>scroll</code>; <code>addLuaSprite('x', true)</code> (the foreground flag) pushes <code>zIndex</code> above the characters, otherwise props stack below them in call order. <code>atlasSettings</code> is always <code>null</code> and per-animation <code>flipX</code>/<code>flipY</code> default to <code>false</code> since Lua doesn't expose either. This is regex parsing, not a Lua interpreter — loops, variables used as sprite names, and anything built programmatically won't be picked up, so check the result against the script.<br><br>
       <strong>Not carried over</strong> — <code>camera_speed</code> isn't part of the stage schema, it belongs in the song's metadata.json as <code>cameraSpeed</code> (see the Charts tab). Shaders, tweened event animations (like a custom spotlight event), and anything in <code>onEvent</code>/<code>onTimerCompleted</code> are code, not static stage data — you'll need to reimplement that logic directly in your target engine.
     </div>
   </section>
@@ -767,7 +768,7 @@
     </div>
 
     <div class="notes-info">
-      <strong>Field mapping</strong> — each animation's <code>name</code> becomes <code>anim</code>, <code>prefix</code> becomes the atlas <code>name</code>, <code>looped</code> becomes <code>loop</code>, and <code>offsets</code>/<code>frameRate</code>/<code>indices</code> carry over exactly (missing fps falls back to the default above). <code>assetPath</code> has its <code>shared:</code> prefix stripped to become <code>image</code>, unless you override it on the left.<br><br>
+      <strong>Field mapping</strong> — each animation's <code>name</code> becomes <code>anim</code>, <code>prefix</code> becomes the atlas <code>name</code>, <code>looped</code> becomes <code>loop</code>, and <code>offsets</code>/<code>frameRate</code>/<code>frameIndices</code> (as <code>indices</code>) carry over exactly (missing fps falls back to the default above). <code>scale</code>, <code>singTime</code>, and <code>healthIcon.id</code> map straight to <code>scale</code>, <code>sing_duration</code>, and <code>healthicon</code> when present, falling back to the fields on the left otherwise. <code>assetPath</code> has its <code>shared:</code> prefix stripped to become <code>image</code>, unless you override it on the left.<br><br>
       <strong>Not reconstructable</strong> — <code>cameraOffsets</code> and the <code>death</code> block have no home in Psych's character schema (that data lives in the stage file instead, or isn't used at all), so they're dropped. <code>deathLoop</code>/<code>deathConfirm</code> states pass through as extra animation entries, but base Psych won't reference them as anything special.
     </div>
   </section>
@@ -822,7 +823,7 @@
 
     <div class="notes-info">
       <strong>Field mapping</strong> — <code>cameraZoom</code> becomes <code>defaultZoom</code>, each character's <code>position</code>/<code>cameraOffsets</code> go back into <code>boyfriend</code>/<code>opponent</code>/<code>girlfriend</code> and <code>camera_*</code>. <code>hide_girlfriend</code> is set to true if there's no <code>gf</code> entry at all, or if it's present with <code>alpha: 0</code> — both show up in real stages.<br><br>
-      <strong>Lua generation</strong> — props are sorted by <code>zIndex</code> (props missing it fall back to their position in the <code>props</code> array, since that's valid too) and turned into <code>makeLuaSprite</code>/<code>makeAnimatedLuaSprite</code> + <code>addAnimationByPrefix</code> + <code>setScrollFactor</code> + <code>addLuaSprite</code>, with the foreground flag set for any prop whose zIndex is above the highest character zIndex. A <code>startingAnimation</code> becomes an <code>objectPlayAnimation</code> call right after the sprite is built. <code>scale</code> works whether it's a single number or an <code>[x,y]</code> pair, but either way it can't be reproduced in Lua (Psych's <code>setGraphicSize</code> needs the sprite's real pixel dimensions, which isn't in the JSON) — flagged props are listed after converting. <code>animType</code> other than "sparrow" is generated the same way regardless, since Psych only understands sparrow atlases and single images — double check those manually. <code>danceEvery</code>, <code>atlasSettings</code>, blend modes, and any <code>lowQuality</code> gating aren't reconstructed since Psych stores none of that in the stage JSON either.
+      <strong>Lua generation</strong> — props are sorted by <code>zIndex</code> (props missing it fall back to their position in the <code>props</code> array, since that's valid too) and turned into <code>makeLuaSprite</code>/<code>makeAnimatedLuaSprite</code> + <code>addAnimationByPrefix</code> (or <code>addAnimationByIndices</code> when an animation has <code>frameIndices</code>) + <code>setScrollFactor</code> + <code>addLuaSprite</code>, with the foreground flag set for any prop whose zIndex is above the highest character zIndex. A <code>startingAnimation</code> becomes an <code>objectPlayAnimation</code> call right after the sprite is built. <code>scale</code> works whether it's a single number or an <code>[x,y]</code> pair, but either way it can't be reproduced in Lua (Psych's <code>setGraphicSize</code> needs the sprite's real pixel dimensions, which isn't in the JSON) — flagged props are listed after converting. <code>animType</code> other than "sparrow" is generated the same way regardless, since Psych only understands sparrow atlases and single images — double check those manually. <code>danceEvery</code>, <code>atlasSettings</code>, blend modes, and any <code>lowQuality</code> gating aren't reconstructed since Psych stores none of that in the stage JSON either.
     </div>
   </section>
 </main>
@@ -1250,6 +1251,7 @@ function convertPsychCharacter(psychJson, meta) {
   var anims = psychJson.animations || [];
   var outAnims = [];
   var hasDeath = false;
+  var startingAnimation = null;
 
   for (var i = 0; i < anims.length; i++) {
     var a = anims[i];
@@ -1258,13 +1260,14 @@ function convertPsychCharacter(psychJson, meta) {
     if (a.loop) outAnim.looped = true;
     if (Array.isArray(a.offsets)) outAnim.offsets = a.offsets;
     if (typeof a.fps === 'number') outAnim.frameRate = a.fps;
-    if (Array.isArray(a.indices) && a.indices.length) outAnim.indices = a.indices;
+    if (Array.isArray(a.indices) && a.indices.length) outAnim.frameIndices = a.indices;
 
     if (isDeathAnimId(a.anim)) {
       hasDeath = true;
       outAnim.name = classifyDeathAnim(a.anim);
     }
 
+    if (startingAnimation === null) startingAnimation = outAnim.name;
     outAnims.push(outAnim);
   }
 
@@ -1276,11 +1279,16 @@ function convertPsychCharacter(psychJson, meta) {
     name: meta.name || guessDisplayName(psychJson.image),
     renderType: meta.renderType || 'multianimateatlas',
     assetPath: meta.assetPath || guessAssetPath(psychJson.image),
+    scale: psychJson.scale !== undefined ? psychJson.scale : 1,
+    singTime: psychJson.sing_duration !== undefined ? psychJson.sing_duration : 4,
+    startingAnimation: startingAnimation,
     flipX: !!psychJson.flip_x,
     offsets: [meta.offsetX || 0, meta.offsetY || 0],
     cameraOffsets: [camX, camY],
     animations: outAnims
   };
+
+  if (psychJson.healthicon) out.healthIcon = { id: psychJson.healthicon };
 
   if (hasDeath) {
     out.death = {
@@ -1464,6 +1472,17 @@ function extractLuaProps(luaSource, isPixelDefault) {
     if (am[5] === 'true') animEntry.looped = true;
     prop2.animations.push(animEntry);
     if (prop2.startingAnimation === null) prop2.startingAnimation = am[2];
+  }
+
+  var indicesAnimRegex = /addAnimationByIndices\('([^']+)',\s*'([^']*)',\s*'([^']*)',\s*\{([^}]*)\},\s*(\d+)(?:,\s*(true|false))?\)/g;
+  var iam;
+  while ((iam = indicesAnimRegex.exec(luaSource))) {
+    var prop2b = ensureProp(iam[1]);
+    var indicesList = iam[4].split(',').map(function (s) { return parseInt(s.trim(), 10); }).filter(function (n) { return !isNaN(n); });
+    var animEntry2 = { name: iam[2], prefix: iam[3], frameRate: parseInt(iam[5], 10), flipX: false, flipY: false, frameIndices: indicesList };
+    if (iam[6] === 'true') animEntry2.looped = true;
+    prop2b.animations.push(animEntry2);
+    if (prop2b.startingAnimation === null) prop2b.startingAnimation = iam[2];
   }
 
   var scrollRegex = /setScrollFactor\('([^']+)',\s*(-?[\d.]+),\s*(-?[\d.]+)\)/g;
@@ -1986,12 +2005,13 @@ function convertVSliceToPsychCharacter(vJson, meta) {
       anim: a.name,
       fps: a.frameRate !== undefined ? a.frameRate : meta.fps,
       name: a.prefix || a.name,
-      indices: Array.isArray(a.indices) ? a.indices : []
+      indices: Array.isArray(a.frameIndices) ? a.frameIndices : []
     };
   });
 
   var image = meta.image || (vJson.assetPath || '').replace(/^shared:/, '');
   var hb = meta.hbColor || [0, 0, 0];
+  var healthiconValue = (vJson.healthIcon && vJson.healthIcon.id) || meta.healthicon || '';
 
   return {
     animations: outAnims,
@@ -1999,11 +2019,11 @@ function convertVSliceToPsychCharacter(vJson, meta) {
     no_antialiasing: false,
     image: image,
     position: [meta.posX || 0, meta.posY || 0],
-    healthicon: meta.healthicon || '',
+    healthicon: healthiconValue,
     flip_x: !!vJson.flipX,
     healthbar_colors: hb,
-    sing_duration: meta.singDuration !== undefined ? meta.singDuration : 4,
-    scale: meta.scale !== undefined ? meta.scale : 1,
+    sing_duration: vJson.singTime !== undefined ? vJson.singTime : (meta.singDuration !== undefined ? meta.singDuration : 4),
+    scale: vJson.scale !== undefined ? vJson.scale : (meta.scale !== undefined ? meta.scale : 1),
     _editor_isPlayer: false
   };
 }
@@ -2135,7 +2155,12 @@ function buildLuaFromProps(propsIn, maxCharZ) {
       p.animations.forEach(function (a) {
         var loopArg = a.looped ? ', true' : '';
         var fps = a.frameRate !== undefined ? a.frameRate : 24;
-        lines.push("\taddAnimationByPrefix('" + p.name + "', '" + a.name + "', '" + a.prefix + "', " + fps + loopArg + ')');
+        if (Array.isArray(a.frameIndices) && a.frameIndices.length) {
+          var indicesStr = '{' + a.frameIndices.join(', ') + '}';
+          lines.push("\taddAnimationByIndices('" + p.name + "', '" + a.name + "', '" + a.prefix + "', " + indicesStr + ', ' + fps + loopArg + ')');
+        } else {
+          lines.push("\taddAnimationByPrefix('" + p.name + "', '" + a.name + "', '" + a.prefix + "', " + fps + loopArg + ')');
+        }
       });
       if (p.startingAnimation) {
         lines.push("\tobjectPlayAnimation('" + p.name + "', '" + p.startingAnimation + "')");
