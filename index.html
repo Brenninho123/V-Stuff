@@ -422,6 +422,28 @@
       </div>
     </div>
 
+    <label class="first">More credits (optional)</label>
+    <div class="field-row">
+      <div>
+        <label class="first">Alt charter</label>
+        <input type="text" id="altCharter" placeholder="">
+      </div>
+      <div>
+        <label class="first">Sticker pack</label>
+        <input type="text" id="stickerPack" placeholder="">
+      </div>
+    </div>
+    <div class="field-row">
+      <div>
+        <label class="first">Sprite artist</label>
+        <input type="text" id="spriteArtist" placeholder="">
+      </div>
+      <div>
+        <label class="first">Cutscene artist</label>
+        <input type="text" id="cutsceneArtist" placeholder="">
+      </div>
+    </div>
+
     <button id="convertBtn" type="button">Convert chart</button>
     <div id="status"></div>
   </section>
@@ -445,7 +467,8 @@
     </div>
 
     <div class="notes-info">
-      <strong>Event mapping</strong> — Play Animation and Add Camera Zoom convert directly; the target character becomes V-Slice's role name (<code>opponent</code>/<code>player</code>/<code>girlfriend</code> — confirmed against a real V-Slice chart, not just guessed). Flash Camera / flash become FlashCamera. Anything else (Philly Glow, Cinematics, custom stage events) passes through with its original name under <code>v.p1</code> / <code>v.p2</code> so nothing is silently dropped — check the console list after converting and wire those up in your engine fork as needed.
+      <strong>Event mapping</strong> — Play Animation and Add Camera Zoom convert directly; the target character becomes V-Slice's role name (<code>opponent</code>/<code>player</code>/<code>girlfriend</code> — confirmed against a real V-Slice chart, not just guessed). Flash Camera / flash become FlashCamera. Anything else (Philly Glow, Cinematics, custom stage events) passes through with its original name under <code>v.p1</code> / <code>v.p2</code> so nothing is silently dropped — check the console list after converting and wire those up in your engine fork as needed.<br><br>
+      <strong>Metadata</strong> — alt charter, sprite artist, cutscene artist, and sticker pack are real fields in V-Slice metadata (confirmed against an actual file) but Psych has nowhere to store them, so fill them in on the left if you want them in the output — they're left out entirely when blank rather than written as empty strings.
     </div>
   </section>
 </main>
@@ -666,7 +689,7 @@
 
     <div class="notes-info">
       <strong>Section reconstruction</strong> — notes are grouped into fixed 4-beat sections walked forward from <code>timeChanges</code> (or a flat 100 BPM if no metadata is given). Each section's <code>mustHitSection</code> is set by majority vote of that section's notes, and directions are shifted back accordingly — this is the exact inverse of the Charts (forward) conversion, so a round trip should match. Trailing empty sections at the end of the original chart aren't reconstructed since there's no note data to anchor them. Not every difficulty needs notes — the dropdown auto-picks the first one (normal, then hard, then easy) that actually has any once you paste or upload a chart.<br><br>
-      <strong>Events</strong> — PlayAnimation and ZoomCamera convert back directly (ZoomCamera reconstructs the delta from consecutive absolute zoom values, keyed by its <code>mode</code> field — the easing curve itself, whether it's one combined name like "expoOut" or split into <code>ease</code> + <code>easeDir</code>, doesn't carry over either way since Psych's "Add Camera Zoom" has no easing concept at all). PlayAnimation's role name — <code>opponent</code>/<code>player</code>/<code>girlfriend</code> — maps back to <code>dad</code>/<code>boyfriend</code>/<code>gf</code>. ScrollSpeed becomes "Change Scroll Speed" with the new speed and strumline (duration/easing are dropped for the same reason). FlashCamera always restores as "Flash Camera" — Psych's "flash" event name is indistinguishable from it once merged, so if your original used "flash" you'll want to rename it back by hand. FocusCamera isn't a native Psych event, so it comes through as-is with the focused character guessed from its numeric <code>char</code> index (0/1/2 → dad/boyfriend/girlfriend, inferred from typical ordering, not confirmed) and the rest of its data (x, y, duration, ease) packed as JSON in the second slot — you'll need a custom event handler to use it. Any other event Psych can't natively represent — SetCameraBop and anything not covered above — comes through the same way: full data preserved as JSON rather than dropped, so check those events after converting.
+      <strong>Events</strong> — PlayAnimation and ZoomCamera convert back directly (ZoomCamera reconstructs the delta from consecutive absolute zoom values, keyed by its <code>mode</code> field — the easing curve itself, whether it's one combined name like "expoOut" or split into <code>ease</code> + <code>easeDir</code>, doesn't carry over either way since Psych's "Add Camera Zoom" has no easing concept at all). PlayAnimation's role name — <code>opponent</code>/<code>player</code>/<code>girlfriend</code> — maps back to <code>dad</code>/<code>boyfriend</code>/<code>gf</code>. ScrollSpeed becomes "Change Scroll Speed" with the new speed and strumline (duration/easing are dropped for the same reason). FlashCamera always restores as "Flash Camera" — Psych's "flash" event name is indistinguishable from it once merged, so if your original used "flash" you'll want to rename it back by hand. FocusCamera and SwitchIdleSuffix aren't native Psych events, so they come through as-is with the target character guessed from its numeric index (0/1/2 → dad/boyfriend/girlfriend, inferred from typical ordering, not confirmed); FocusCamera's remaining data (x, y, duration, ease — whichever are actually present, since real files sometimes only send <code>char</code>) is packed as JSON in the second slot. You'll need a custom event handler for either. Any other event Psych can't natively represent — SetCameraBop and anything not covered above — comes through the same way: full data preserved as JSON rather than dropped, so check those events after converting.
     </div>
   </section>
 </main>
@@ -1017,6 +1040,11 @@ function convertPsychChart(psychJson, meta) {
     timeChanges: noteResult.timeChanges
   };
 
+  if (meta.altCharter) metadataOut.altCharter = meta.altCharter;
+  if (meta.spriteArtist) metadataOut.spriteArtist = meta.spriteArtist;
+  if (meta.cutsceneArtist) metadataOut.cutsceneArtist = meta.cutsceneArtist;
+  if (meta.stickerPack) metadataOut.playData.stickerPack = meta.stickerPack;
+
   return { chart: chartOut, metadata: metadataOut };
 }
 
@@ -1033,7 +1061,11 @@ function readMetaFields() {
     charter: document.getElementById('charter').value.trim(),
     album: document.getElementById('album').value.trim(),
     stage: document.getElementById('stage').value.trim(),
-    noteStyle: document.getElementById('noteStyle').value.trim()
+    noteStyle: document.getElementById('noteStyle').value.trim(),
+    altCharter: document.getElementById('altCharter').value.trim(),
+    spriteArtist: document.getElementById('spriteArtist').value.trim(),
+    cutsceneArtist: document.getElementById('cutsceneArtist').value.trim(),
+    stickerPack: document.getElementById('stickerPack').value.trim()
   };
 }
 
@@ -1770,6 +1802,10 @@ function mapVSliceEventToPsych(ev, zoomTrackers) {
     var strumline = ev.v.strumline && ev.v.strumline !== 'both' ? ev.v.strumline : '';
     var scrollValue = ev.v.scroll !== undefined ? ev.v.scroll : 1;
     return ['Change Scroll Speed', String(scrollValue), strumline];
+  }
+  if (ev.e === 'SwitchIdleSuffix') {
+    var idleCharName = ev.v.target !== undefined ? vSliceCharIndexToPsychName(ev.v.target) : 'boyfriend';
+    return ['SwitchIdleSuffix', idleCharName, ev.v.suffix || ''];
   }
   if (ev.v && (ev.v.p1 !== undefined || ev.v.p2 !== undefined)) {
     return [ev.e, ev.v.p1 !== undefined ? ev.v.p1 : '', ev.v.p2 !== undefined ? ev.v.p2 : ''];
