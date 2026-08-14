@@ -101,6 +101,116 @@
 
   #installBtn .dot { background: var(--green); }
 
+  .app-nav {
+    display: flex;
+    gap: 0;
+    padding: 0 48px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .app-nav button {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: 14px 4px;
+    margin-right: 32px;
+    color: var(--text-dim);
+  }
+
+  .app-nav button.active {
+    color: var(--text);
+    border-bottom-color: var(--green);
+  }
+
+  .editor-controls {
+    padding: 28px 48px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .editor-controls h2 {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: 20px;
+    margin: 0 0 4px;
+  }
+
+  .editor-controls .sub {
+    color: var(--text-dim);
+    font-size: 13px;
+    margin: 0 0 20px;
+  }
+
+  .editor-grid-wrap {
+    margin: 24px 48px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: 620px;
+    position: relative;
+    background: var(--surface);
+  }
+
+  .editor-grid-inner {
+    position: relative;
+    cursor: crosshair;
+  }
+
+  .editor-lane-bg {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border-right: 1px solid var(--border);
+  }
+
+  .editor-gridline {
+    position: absolute;
+    left: 0;
+    right: 0;
+    border-top: 1px solid var(--border);
+    pointer-events: none;
+  }
+
+  .editor-gridline.measure {
+    border-top-color: var(--text-dim);
+  }
+
+  .editor-measure-label {
+    position: absolute;
+    left: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    pointer-events: none;
+  }
+
+  .editor-note {
+    position: absolute;
+    border-radius: 4px;
+    opacity: 0.92;
+    cursor: pointer;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.3);
+  }
+
+  .editor-note:hover { opacity: 1; outline: 2px solid #fff; }
+
+  .editor-note.l0 { background: var(--purple); }
+  .editor-note.l1 { background: var(--blue); }
+  .editor-note.l2 { background: var(--green); }
+  .editor-note.l3 { background: var(--red); }
+  .editor-note.l4 { background: var(--purple); filter: brightness(0.7); }
+  .editor-note.l5 { background: var(--blue); filter: brightness(0.7); }
+  .editor-note.l6 { background: var(--green); filter: brightness(0.7); }
+  .editor-note.l7 { background: var(--red); filter: brightness(0.7); }
+
+  .editor-export-bar {
+    padding: 20px 48px 32px;
+  }
+
   .dir-nav {
     display: flex;
     gap: 10px;
@@ -363,6 +473,13 @@
   <p>Converts a Psych Engine chart into the V-Slice chart and metadata format. Paste or upload a chart, fill in what Psych doesn't store, and get both output files.</p>
   <button id="installBtn" type="button"><span class="dot"></span>Install app</button>
 </header>
+
+<nav class="app-nav">
+  <button id="navAppGenerator" class="active" type="button">Generator</button>
+  <button id="navAppEditor" type="button">Editor</button>
+</nav>
+
+<div id="generatorApp">
 
 <nav class="dir-nav">
   <button id="navDirForward" class="active" type="button">Psych &#8594; V-Slice</button>
@@ -827,6 +944,82 @@
     </div>
   </section>
 </main>
+
+</div>
+
+<div id="editorApp" style="display:none;">
+<main class="page active" style="display:block;">
+  <section class="panel" style="grid-column: 1 / -1;">
+    <div class="editor-controls">
+      <h2>Chart Editor <span style="color:var(--text-dim); font-weight:500; font-size:14px;">— V-Slice format, notes only</span></h2>
+      <p class="sub">No audio, no hold-note dragging, no undo yet — click a lane to place a tap note, click a note to remove it, shift-click a note to extend its sustain by one snap unit, alt-click to shorten it.</p>
+
+      <label class="first">Chart JSON (V-Slice)</label>
+      <div class="file-drop">
+        <span id="editorChartFileLabel">No file selected</span>
+        <button id="editorChartFileBtn" type="button">Upload .json</button>
+        <input type="file" id="editorChartFileInput" accept="application/json,.json">
+      </div>
+      <textarea id="editorChartInput" placeholder="{ &quot;version&quot;: &quot;2.0.0&quot;, &quot;notes&quot;: { ... } }" spellcheck="false" style="margin-top:10px; height:120px;"></textarea>
+
+      <label class="first">Metadata JSON (optional, for BPM)</label>
+      <div class="file-drop">
+        <span id="editorMetaFileLabel">No file selected</span>
+        <button id="editorMetaFileBtn" type="button">Upload .json</button>
+        <input type="file" id="editorMetaFileInput" accept="application/json,.json">
+      </div>
+      <textarea id="editorMetaInput" placeholder="{ &quot;timeChanges&quot;: [ ... ] }" spellcheck="false" style="margin-top:10px; height:80px;"></textarea>
+
+      <div class="field-row">
+        <div>
+          <label class="first">Difficulty</label>
+          <select id="editorDifficulty">
+            <option value="easy">easy</option>
+            <option value="normal" selected>normal</option>
+            <option value="hard">hard</option>
+          </select>
+        </div>
+        <div>
+          <label class="first">BPM (used if no metadata)</label>
+          <input type="text" id="editorBpm" placeholder="100">
+        </div>
+      </div>
+      <div class="field-row">
+        <div>
+          <label class="first">Snap</label>
+          <select id="editorSnap">
+            <option value="4">1/4</option>
+            <option value="8">1/8</option>
+            <option value="12">1/12</option>
+            <option value="16" selected>1/16</option>
+            <option value="24">1/24</option>
+            <option value="32">1/32</option>
+          </select>
+        </div>
+        <div>
+          <label class="first">Zoom (px per beat)</label>
+          <input type="text" id="editorZoom" placeholder="80">
+        </div>
+      </div>
+
+      <button id="editorLoadBtn" type="button">Load chart</button>
+      <div id="editorStatus"></div>
+    </div>
+
+    <div class="editor-grid-wrap" id="editorGridWrap">
+      <div class="editor-grid-inner" id="editorGridInner">
+        <div class="empty-state" style="margin:40px;">Load a chart to see the grid.</div>
+      </div>
+    </div>
+
+    <div class="editor-export-bar">
+      <button id="editorExportBtn" type="button">Copy chart.json</button>
+      <button id="editorDownloadBtn" type="button">Download chart.json</button>
+      <span id="editorNoteCount" style="margin-left:12px; color:var(--text-dim); font-family:'JetBrains Mono', monospace; font-size:13px;"></span>
+    </div>
+  </section>
+</main>
+</div>
 
 <script>
 if ('serviceWorker' in navigator) {
@@ -2326,6 +2519,246 @@ document.getElementById('stageRDownloadBtn').addEventListener('click', function 
   var a = document.createElement('a');
   a.href = url;
   a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('navAppGenerator').addEventListener('click', function () {
+  document.getElementById('navAppGenerator').classList.add('active');
+  document.getElementById('navAppEditor').classList.remove('active');
+  document.getElementById('generatorApp').style.display = '';
+  document.getElementById('editorApp').style.display = 'none';
+});
+
+document.getElementById('navAppEditor').addEventListener('click', function () {
+  document.getElementById('navAppEditor').classList.add('active');
+  document.getElementById('navAppGenerator').classList.remove('active');
+  document.getElementById('editorApp').style.display = '';
+  document.getElementById('generatorApp').style.display = 'none';
+});
+
+var editorChart = null;
+var editorNotes = [];
+var editorBpmValue = 100;
+var editorSnapValue = 16;
+var editorPxPerBeat = 80;
+var editorColWidth = 46;
+var editorNumLanes = 8;
+
+function editorMsPerBeat() {
+  return 60000 / editorBpmValue;
+}
+
+function editorSnapMs() {
+  return editorMsPerBeat() * 4 / editorSnapValue;
+}
+
+function editorPxPerMs() {
+  return editorPxPerBeat / editorMsPerBeat();
+}
+
+function editorTimeToY(t) {
+  return t * editorPxPerMs();
+}
+
+function editorYToTime(y) {
+  return y / editorPxPerMs();
+}
+
+function editorSnapTime(t) {
+  var s = editorSnapMs();
+  return Math.round(t / s) * s;
+}
+
+function setEditorStatus(text, kind) {
+  var el = document.getElementById('editorStatus');
+  el.textContent = text;
+  el.className = kind || '';
+}
+
+document.getElementById('editorChartFileBtn').addEventListener('click', function () {
+  document.getElementById('editorChartFileInput').click();
+});
+document.getElementById('editorChartFileInput').addEventListener('change', function (e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('editorChartFileLabel').textContent = file.name;
+  var reader = new FileReader();
+  reader.onload = function (ev) { document.getElementById('editorChartInput').value = ev.target.result; };
+  reader.readAsText(file);
+});
+
+document.getElementById('editorMetaFileBtn').addEventListener('click', function () {
+  document.getElementById('editorMetaFileInput').click();
+});
+document.getElementById('editorMetaFileInput').addEventListener('change', function (e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('editorMetaFileLabel').textContent = file.name;
+  var reader = new FileReader();
+  reader.onload = function (ev) { document.getElementById('editorMetaInput').value = ev.target.result; };
+  reader.readAsText(file);
+});
+
+document.getElementById('editorLoadBtn').addEventListener('click', function () {
+  var rawChart = document.getElementById('editorChartInput').value.trim();
+  if (!rawChart) {
+    setEditorStatus('Paste or upload a V-Slice chart first.', 'err');
+    return;
+  }
+
+  var parsedChart;
+  try {
+    parsedChart = JSON.parse(rawChart);
+  } catch (err) {
+    setEditorStatus('Chart JSON doesn\'t parse: ' + err.message, 'err');
+    return;
+  }
+
+  var rawMeta = document.getElementById('editorMetaInput').value.trim();
+  var parsedMeta = null;
+  if (rawMeta) {
+    try {
+      parsedMeta = JSON.parse(rawMeta);
+    } catch (err) {
+      setEditorStatus('Metadata JSON doesn\'t parse: ' + err.message, 'err');
+      return;
+    }
+  }
+
+  var bpmField = toNumber(document.getElementById('editorBpm').value, null);
+  if (parsedMeta && parsedMeta.timeChanges && parsedMeta.timeChanges.length) {
+    editorBpmValue = parsedMeta.timeChanges[0].bpm || 100;
+  } else if (bpmField) {
+    editorBpmValue = bpmField;
+  } else {
+    editorBpmValue = 100;
+  }
+
+  editorSnapValue = toNumber(document.getElementById('editorSnap').value, 16);
+  editorPxPerBeat = toNumber(document.getElementById('editorZoom').value, 80);
+
+  editorChart = parsedChart;
+  if (!editorChart.notes) editorChart.notes = {};
+
+  var diff = document.getElementById('editorDifficulty').value;
+  if (!Array.isArray(editorChart.notes[diff])) editorChart.notes[diff] = [];
+  editorNotes = editorChart.notes[diff];
+
+  setEditorStatus('Loaded ' + editorNotes.length + ' notes on ' + diff + ' at ' + editorBpmValue + ' BPM.', 'ok');
+  renderEditorGrid();
+});
+
+document.getElementById('editorDifficulty').addEventListener('change', function () {
+  if (!editorChart) return;
+  var diff = document.getElementById('editorDifficulty').value;
+  if (!Array.isArray(editorChart.notes[diff])) editorChart.notes[diff] = [];
+  editorNotes = editorChart.notes[diff];
+  renderEditorGrid();
+});
+
+function renderEditorGrid() {
+  var wrap = document.getElementById('editorGridInner');
+  wrap.innerHTML = '';
+
+  var maxTime = 0;
+  editorNotes.forEach(function (n) {
+    var end = n.t + (n.l || 0);
+    if (end > maxTime) maxTime = end;
+  });
+
+  var msPerBeat = editorMsPerBeat();
+  var totalBeats = Math.ceil(maxTime / msPerBeat) + 16;
+  var totalHeight = totalBeats * editorPxPerBeat;
+  var totalWidth = editorColWidth * editorNumLanes;
+
+  wrap.style.height = totalHeight + 'px';
+  wrap.style.width = totalWidth + 'px';
+
+  var laneColors = ['l0', 'l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7'];
+  for (var lane = 0; lane < editorNumLanes; lane++) {
+    var laneBg = document.createElement('div');
+    laneBg.className = 'editor-lane-bg';
+    laneBg.style.left = (lane * editorColWidth) + 'px';
+    laneBg.style.width = editorColWidth + 'px';
+    if (lane === 3) laneBg.style.borderRightColor = 'var(--text-dim)';
+    wrap.appendChild(laneBg);
+  }
+
+  for (var beat = 0; beat <= totalBeats; beat++) {
+    var line = document.createElement('div');
+    var isMeasure = beat % 4 === 0;
+    line.className = 'editor-gridline' + (isMeasure ? ' measure' : '');
+    line.style.top = (beat * editorPxPerBeat) + 'px';
+    wrap.appendChild(line);
+
+    if (isMeasure) {
+      var label = document.createElement('div');
+      label.className = 'editor-measure-label';
+      label.style.top = (beat * editorPxPerBeat + 2) + 'px';
+      label.textContent = 'm' + (beat / 4);
+      wrap.appendChild(label);
+    }
+  }
+
+  editorNotes.forEach(function (note, idx) {
+    var el = document.createElement('div');
+    el.className = 'editor-note ' + (laneColors[note.d] || 'l0');
+    el.style.left = (note.d * editorColWidth + 3) + 'px';
+    el.style.width = (editorColWidth - 6) + 'px';
+    el.style.top = editorTimeToY(note.t) + 'px';
+    el.style.height = Math.max(14, editorTimeToY(note.l || 0)) + 'px';
+    el.title = 't=' + Math.round(note.t) + ' d=' + note.d + (note.l ? ' l=' + Math.round(note.l) : '') + (note.k ? ' k=' + note.k : '');
+
+    el.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      if (ev.shiftKey) {
+        note.l = (note.l || 0) + editorSnapMs();
+      } else if (ev.altKey) {
+        note.l = Math.max(0, (note.l || 0) - editorSnapMs());
+      } else {
+        var pos = editorNotes.indexOf(note);
+        if (pos !== -1) editorNotes.splice(pos, 1);
+      }
+      renderEditorGrid();
+    });
+
+    wrap.appendChild(el);
+  });
+
+  wrap.onclick = function (ev) {
+    var rect = wrap.getBoundingClientRect();
+    var x = ev.clientX - rect.left;
+    var y = ev.clientY - rect.top;
+    var lane = Math.max(0, Math.min(editorNumLanes - 1, Math.floor(x / editorColWidth)));
+    var t = editorSnapTime(editorYToTime(y));
+    if (t < 0) t = 0;
+    editorNotes.push({ t: t, d: lane, l: 0, p: [] });
+    renderEditorGrid();
+  };
+
+  document.getElementById('editorNoteCount').textContent = editorNotes.length + ' notes';
+}
+
+document.getElementById('editorExportBtn').addEventListener('click', function () {
+  if (!editorChart) return;
+  var text = JSON.stringify(editorChart, null, 2);
+  var temp = document.createElement('textarea');
+  temp.value = text;
+  document.body.appendChild(temp);
+  temp.select();
+  document.execCommand('copy');
+  document.body.removeChild(temp);
+  setEditorStatus('Copied chart.json to clipboard.', 'ok');
+});
+
+document.getElementById('editorDownloadBtn').addEventListener('click', function () {
+  if (!editorChart) return;
+  var blob = new Blob([JSON.stringify(editorChart, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'chart.json';
   a.click();
   URL.revokeObjectURL(url);
 });
