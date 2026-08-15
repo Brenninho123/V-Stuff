@@ -1428,10 +1428,106 @@
   </section>
 </main>
 
+<main id="codenameCharactersPage" class="page">
+  <section class="panel">
+    <h2><span class="tag from">FROM</span> Codename Engine</h2>
+    <p class="sub">Paste or upload a Codename character XML (the file starting with <code>&lt;!DOCTYPE codename-engine-character&gt;</code>).</p>
+
+    <label class="first">Character XML (Codename)</label>
+    <div class="file-drop">
+      <span id="codenameCharFileLabel">No file selected</span>
+      <button id="codenameCharFileBtn" type="button">Upload .xml</button>
+      <input type="file" id="codenameCharFileInput" accept=".xml,text/xml">
+    </div>
+    <textarea id="codenameCharInput" placeholder="&lt;character sprite=&quot;bf&quot; ...&gt;...&lt;/character&gt;" spellcheck="false"></textarea>
+
+    <div class="field-row">
+      <div>
+        <label class="first">Display name</label>
+        <input type="text" id="codenameCharName" placeholder="Boyfriend">
+      </div>
+      <div>
+        <label class="first">Render type</label>
+        <select id="codenameCharRenderType">
+          <option value="multianimateatlas">multianimateatlas</option>
+          <option value="animateatlas">animateatlas</option>
+          <option value="packeranimation">packeranimation</option>
+          <option value="sparrow">sparrow</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div>
+        <label class="first">Asset path</label>
+        <input type="text" id="codenameCharAssetPath" placeholder="shared:characters/bf">
+      </div>
+      <div>
+        <label class="first">Camera offsets (x, y)</label>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="codenameCharCamX" placeholder="0">
+          <input type="text" id="codenameCharCamY" placeholder="0">
+        </div>
+      </div>
+    </div>
+
+    <button id="codenameCharConvertBtn" type="button">Convert character</button>
+    <div id="codenameCharStatus"></div>
+  </section>
+
+  <section class="panel">
+    <h2><span class="tag to">TO</span> V-Slice</h2>
+    <textarea id="codenameCharOutput" readonly spellcheck="false" placeholder="Converted character.json will appear here."></textarea>
+    <div class="output-actions">
+      <button id="codenameCharCopyBtn" type="button">Copy</button>
+      <button id="codenameCharDownloadBtn" type="button">Download</button>
+    </div>
+
+    <div class="notes-info">
+      <strong>Field mapping</strong> — each <code>&lt;anim&gt;</code>'s <code>name</code> becomes <code>name</code>, its <code>anim</code> attribute (the actual atlas prefix) becomes <code>prefix</code>, <code>x</code>/<code>y</code> become <code>offsets</code>, <code>fps</code> becomes <code>frameRate</code>, <code>loop="true"</code> becomes <code>looped</code>. The character's own <code>y</code> (and <code>x</code>, if present) becomes the top-level <code>offsets</code>, <code>flipX</code> carries straight over, <code>icon</code> becomes <code>healthIcon: {id: ...}</code>, and <code>startingAnimation</code> is set to whichever animation comes first — same mapping as the Characters tab. An animation whose <code>name</code> contains "death" gets the same death-state handling too.<br><br>
+      <strong>Not carried over</strong> — <code>isPlayer</code> has no equivalent field (V-Slice decides player vs. opponent per-song, not per-character-file); <code>color</code> (health bar tint) has no field in this schema either.
+    </div>
+  </section>
+</main>
+
+<main id="codenameStagesPage" class="page">
+  <section class="panel">
+    <h2><span class="tag from">FROM</span> Codename Engine</h2>
+    <p class="sub">Paste or upload a Codename stage XML (the file starting with <code>&lt;!DOCTYPE codename-engine-stage&gt;</code>).</p>
+
+    <label class="first">Stage XML (Codename)</label>
+    <div class="file-drop">
+      <span id="codenameStageFileLabel">No file selected</span>
+      <button id="codenameStageFileBtn" type="button">Upload .xml</button>
+      <input type="file" id="codenameStageFileInput" accept=".xml,text/xml">
+    </div>
+    <textarea id="codenameStageInput" placeholder="&lt;stage zoom=&quot;0.9&quot; ...&gt;...&lt;/stage&gt;" spellcheck="false"></textarea>
+
+    <label class="first">Stage name</label>
+    <input type="text" id="codenameStageName" placeholder="mainStage">
+
+    <button id="codenameStageConvertBtn" type="button">Convert stage</button>
+    <div id="codenameStageStatus"></div>
+  </section>
+
+  <section class="panel">
+    <h2><span class="tag to">TO</span> V-Slice</h2>
+    <textarea id="codenameStageOutput" readonly spellcheck="false" placeholder="Converted stage.json will appear here."></textarea>
+    <div class="output-actions">
+      <button id="codenameStageCopyBtn" type="button">Copy</button>
+      <button id="codenameStageDownloadBtn" type="button">Download</button>
+    </div>
+
+    <div class="notes-info">
+      <strong>Field mapping</strong> — each <code>&lt;sprite&gt;</code> becomes a prop: <code>name</code> carries over, <code>assetPath</code> is the stage's <code>folder</code> joined with the sprite's own <code>sprite</code> attribute, <code>x</code>/<code>y</code> become <code>position</code>, and <code>scroll</code> (a single number in Codename) fills both axes of the <code>[x, y]</code> scroll pair. Any nested <code>&lt;anim&gt;</code> elements inside a sprite convert the same way as character animations. <code>zoom</code> becomes <code>cameraZoom</code>. Since Codename doesn't give explicit stacking numbers, <code>zIndex</code> is inferred from document order — each <code>&lt;sprite&gt;</code>, and the <code>&lt;girlfriend/&gt;</code>/<code>&lt;dad/&gt;</code>/<code>&lt;boyfriend/&gt;</code> placeholder tags wherever they appear in the file, get an incrementing value in the order they're written. If the file has no <code>&lt;girlfriend/&gt;</code> tag at all, the output marks her hidden (<code>alpha: 0</code>) the same way the Stages tab does for a Psych stage with <code>hide_girlfriend</code>.<br><br>
+      <strong>Not carried over</strong> — <code>startCamPosX</code>/<code>startCamPosY</code> have no equivalent (V-Slice tracks camera position per-character via <code>cameraOffsets</code>, not a single stage-wide starting point); character <code>position</code>/<code>cameraOffsets</code> default to <code>[0, 0]</code> since the <code>&lt;girlfriend/&gt;</code>/<code>&lt;dad/&gt;</code>/<code>&lt;boyfriend/&gt;</code> tags carry no position data at all in Codename — fill those in by hand.
+    </div>
+  </section>
+</main>
+
 <main id="codenameNotBuiltPage" class="page">
   <section class="panel" style="grid-column: 1 / -1;">
     <h2>Codename &#8594; V-Slice</h2>
-    <p class="sub">Not built yet for Codename Engine — only Charts is supported so far. Use the Charts tab above, or switch to a Psych &#8594; V-Slice direction for Characters, Stages, Mod Folder, or Weeks.</p>
+    <p class="sub">Not built yet for Codename Engine — Mod Folder and Weeks aren't wired up for Codename. Use Charts, Characters, or Stages above, or switch to a Psych &#8594; V-Slice direction.</p>
   </section>
 </main>
 
@@ -2280,7 +2376,7 @@ document.getElementById('downloadBtn').addEventListener('click', function () {
 var DIR_PAGES = {
   psychForward: ['chartsPage', 'charactersPage', 'stagesPage', 'modFolderPage', 'weeksPage'],
   psychReverse: ['chartsPageR', 'charactersPageR', 'stagesPageR', 'modFolderPageR', 'weeksPageR'],
-  codenameForward: ['codenamePage', 'codenameNotBuiltPage', 'codenameNotBuiltPage', 'codenameNotBuiltPage', 'codenameNotBuiltPage'],
+  codenameForward: ['codenamePage', 'codenameCharactersPage', 'codenameStagesPage', 'codenameNotBuiltPage', 'codenameNotBuiltPage'],
   codenameReverse: ['codenamePageR', 'codenamePageR', 'codenamePageR', 'codenamePageR', 'codenamePageR']
 };
 var DIR_NAV_IDS = ['navDirForward', 'navDirReverse', 'navDirCodenameForward', 'navDirCodenameReverse'];
@@ -2924,6 +3020,143 @@ document.getElementById('stageEditorDownloadBtn').addEventListener('click', func
   a.click();
   URL.revokeObjectURL(url);
 });
+
+function parseCodenameXmlDoc(xmlText, rootTagCheck) {
+  var parser = new DOMParser();
+  var doc = parser.parseFromString(xmlText, 'text/xml');
+  if (doc.getElementsByTagName('parsererror').length) throw new Error('invalid XML');
+  var rootEl = doc.getElementsByTagName(rootTagCheck)[0];
+  if (!rootEl) throw new Error('no <' + rootTagCheck + '> element found');
+  return rootEl;
+}
+
+function readCodenameAnimEls(animEls) {
+  var animations = [];
+  var startingAnimation = null;
+  var hasDeath = false;
+  for (var i = 0; i < animEls.length; i++) {
+    var el = animEls[i];
+    var name = el.getAttribute('name') || ('anim' + i);
+    var prefix = el.getAttribute('anim') || name;
+    var outAnim = { name: name, prefix: prefix };
+
+    var ax = parseFloat(el.getAttribute('x'));
+    var ay = parseFloat(el.getAttribute('y'));
+    outAnim.offsets = [isNaN(ax) ? 0 : ax, isNaN(ay) ? 0 : ay];
+
+    var fps = parseFloat(el.getAttribute('fps'));
+    if (!isNaN(fps)) outAnim.frameRate = fps;
+    if (el.getAttribute('loop') === 'true') outAnim.looped = true;
+
+    if (isDeathAnimId(name)) {
+      hasDeath = true;
+      outAnim.name = classifyDeathAnim(name);
+    }
+    if (startingAnimation === null) startingAnimation = outAnim.name;
+    animations.push(outAnim);
+  }
+  return { animations: animations, startingAnimation: startingAnimation, hasDeath: hasDeath };
+}
+
+function convertCodenameCharacter(xmlText, meta) {
+  meta = meta || {};
+  var charEl = parseCodenameXmlDoc(xmlText, 'character');
+
+  var offsetX = parseFloat(charEl.getAttribute('x')) || 0;
+  var offsetY = parseFloat(charEl.getAttribute('y')) || 0;
+  var spriteName = charEl.getAttribute('sprite') || '';
+  var flipX = charEl.getAttribute('flipX') === 'true';
+  var icon = charEl.getAttribute('icon') || '';
+
+  var animResult = readCodenameAnimEls(charEl.getElementsByTagName('anim'));
+
+  var camX = meta.cameraOffsetX !== undefined && meta.cameraOffsetX !== null ? meta.cameraOffsetX : 0;
+  var camY = meta.cameraOffsetY !== undefined && meta.cameraOffsetY !== null ? meta.cameraOffsetY : 0;
+
+  var out = {
+    version: '1.0.0',
+    name: meta.name || guessDisplayName(spriteName),
+    renderType: meta.renderType || 'multianimateatlas',
+    assetPath: meta.assetPath || ('shared:characters/' + spriteName.toLowerCase()),
+    scale: 1,
+    singTime: 4,
+    startingAnimation: animResult.startingAnimation,
+    flipX: flipX,
+    offsets: [offsetX, offsetY],
+    cameraOffsets: [camX, camY],
+    animations: animResult.animations
+  };
+  if (icon) out.healthIcon = { id: icon };
+  if (animResult.hasDeath) out.death = { cameraOffsets: [camX, camY] };
+
+  return out;
+}
+
+function convertCodenameStage(xmlText, meta) {
+  meta = meta || {};
+  var stageEl = parseCodenameXmlDoc(xmlText, 'stage');
+
+  var zoom = parseFloat(stageEl.getAttribute('zoom'));
+  var folder = stageEl.getAttribute('folder') || '';
+
+  var props = [];
+  var charZ = {};
+  var zCounter = 10;
+
+  var children = stageEl.childNodes;
+  for (var i = 0; i < children.length; i++) {
+    var node = children[i];
+    if (node.nodeType !== 1) continue;
+    var tag = node.tagName.toLowerCase();
+
+    if (tag === 'sprite') {
+      var name = node.getAttribute('name') || ('prop' + props.length);
+      var spriteName = node.getAttribute('sprite') || name;
+      var x = parseFloat(node.getAttribute('x')) || 0;
+      var y = parseFloat(node.getAttribute('y')) || 0;
+      var scroll = parseFloat(node.getAttribute('scroll'));
+      if (isNaN(scroll)) scroll = 1;
+
+      var animResult = readCodenameAnimEls(node.getElementsByTagName('anim'));
+
+      var prop = {
+        name: name,
+        assetPath: folder + spriteName,
+        position: [x, y],
+        scroll: [scroll, scroll],
+        zIndex: zCounter,
+        animations: animResult.animations
+      };
+      if (animResult.startingAnimation) prop.startingAnimation = animResult.startingAnimation;
+      props.push(prop);
+      zCounter += 10;
+    } else if (tag === 'girlfriend' || tag === 'gf') {
+      charZ.gf = zCounter; zCounter += 10;
+    } else if (tag === 'dad' || tag === 'opponent') {
+      charZ.dad = zCounter; zCounter += 10;
+    } else if (tag === 'boyfriend' || tag === 'bf') {
+      charZ.bf = zCounter; zCounter += 10;
+    }
+  }
+
+  var gfEntry = { position: [0, 0], cameraOffsets: [0, 0], zIndex: charZ.gf !== undefined ? charZ.gf : 100 };
+  if (charZ.gf === undefined) gfEntry.alpha = 0;
+
+  var characters = {
+    bf: { position: [0, 0], cameraOffsets: [0, 0], zIndex: charZ.bf !== undefined ? charZ.bf : 300 },
+    dad: { position: [0, 0], cameraOffsets: [0, 0], zIndex: charZ.dad !== undefined ? charZ.dad : 200 },
+    gf: gfEntry
+  };
+
+  return {
+    version: '1.0.2',
+    name: meta.name || stageEl.getAttribute('name') || 'stage',
+    props: props,
+    characters: characters,
+    cameraZoom: isNaN(zoom) ? 1 : zoom,
+    directory: 'shared'
+  };
+}
 
 function convertPsychCharacter(psychJson, meta) {
   var anims = psychJson.animations || [];
@@ -5209,6 +5442,131 @@ document.getElementById('codenameDownloadBtn').addEventListener('click', functio
     a.click();
     URL.revokeObjectURL(url);
   });
+});
+
+function setCodenameCharStatus(text, kind) {
+  var el = document.getElementById('codenameCharStatus');
+  el.textContent = text;
+  el.className = kind || '';
+}
+
+document.getElementById('codenameCharFileBtn').addEventListener('click', function () {
+  document.getElementById('codenameCharFileInput').click();
+});
+document.getElementById('codenameCharFileInput').addEventListener('change', function (e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('codenameCharFileLabel').textContent = file.name;
+  var reader = new FileReader();
+  reader.onload = function (ev) { document.getElementById('codenameCharInput').value = ev.target.result; };
+  reader.onerror = function () { setCodenameCharStatus('Could not read that file.', 'err'); };
+  reader.readAsText(file);
+});
+
+document.getElementById('codenameCharConvertBtn').addEventListener('click', function () {
+  var raw = document.getElementById('codenameCharInput').value.trim();
+  if (!raw) {
+    setCodenameCharStatus('Paste or upload a Codename character XML first.', 'err');
+    return;
+  }
+  var meta = {
+    name: document.getElementById('codenameCharName').value.trim(),
+    renderType: document.getElementById('codenameCharRenderType').value,
+    assetPath: document.getElementById('codenameCharAssetPath').value.trim(),
+    cameraOffsetX: toNumber(document.getElementById('codenameCharCamX').value, null),
+    cameraOffsetY: toNumber(document.getElementById('codenameCharCamY').value, null)
+  };
+  try {
+    var result = convertCodenameCharacter(raw, meta);
+    document.getElementById('codenameCharOutput').value = JSON.stringify(result, null, 2);
+    setCodenameCharStatus('Converted ' + result.animations.length + ' animation(s)' + (result.death ? ', death animation detected' : '') + '.', 'ok');
+  } catch (err) {
+    setCodenameCharStatus('Could not convert: ' + err.message, 'err');
+  }
+});
+
+document.getElementById('codenameCharCopyBtn').addEventListener('click', function () {
+  var text = document.getElementById('codenameCharOutput').value;
+  if (!text) return;
+  var temp = document.createElement('textarea');
+  temp.value = text;
+  document.body.appendChild(temp);
+  temp.select();
+  document.execCommand('copy');
+  document.body.removeChild(temp);
+  setCodenameCharStatus('Copied to clipboard.', 'ok');
+});
+
+document.getElementById('codenameCharDownloadBtn').addEventListener('click', function () {
+  var text = document.getElementById('codenameCharOutput').value;
+  if (!text) return;
+  var blob = new Blob([text], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'character.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+function setCodenameStageStatus(text, kind) {
+  var el = document.getElementById('codenameStageStatus');
+  el.textContent = text;
+  el.className = kind || '';
+}
+
+document.getElementById('codenameStageFileBtn').addEventListener('click', function () {
+  document.getElementById('codenameStageFileInput').click();
+});
+document.getElementById('codenameStageFileInput').addEventListener('change', function (e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('codenameStageFileLabel').textContent = file.name;
+  var reader = new FileReader();
+  reader.onload = function (ev) { document.getElementById('codenameStageInput').value = ev.target.result; };
+  reader.onerror = function () { setCodenameStageStatus('Could not read that file.', 'err'); };
+  reader.readAsText(file);
+});
+
+document.getElementById('codenameStageConvertBtn').addEventListener('click', function () {
+  var raw = document.getElementById('codenameStageInput').value.trim();
+  if (!raw) {
+    setCodenameStageStatus('Paste or upload a Codename stage XML first.', 'err');
+    return;
+  }
+  var meta = { name: document.getElementById('codenameStageName').value.trim() };
+  try {
+    var result = convertCodenameStage(raw, meta);
+    document.getElementById('codenameStageOutput').value = JSON.stringify(result, null, 2);
+    var gfNote = result.characters.gf.alpha === 0 ? ' (no girlfriend tag found — marked hidden)' : '';
+    setCodenameStageStatus('Converted ' + result.props.length + ' prop(s)' + gfNote + '.', 'ok');
+  } catch (err) {
+    setCodenameStageStatus('Could not convert: ' + err.message, 'err');
+  }
+});
+
+document.getElementById('codenameStageCopyBtn').addEventListener('click', function () {
+  var text = document.getElementById('codenameStageOutput').value;
+  if (!text) return;
+  var temp = document.createElement('textarea');
+  temp.value = text;
+  document.body.appendChild(temp);
+  temp.select();
+  document.execCommand('copy');
+  document.body.removeChild(temp);
+  setCodenameStageStatus('Copied to clipboard.', 'ok');
+});
+
+document.getElementById('codenameStageDownloadBtn').addEventListener('click', function () {
+  var text = document.getElementById('codenameStageOutput').value;
+  if (!text) return;
+  var blob = new Blob([text], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'stage.json';
+  a.click();
+  URL.revokeObjectURL(url);
 });
 
 (function () {
