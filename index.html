@@ -398,10 +398,40 @@
   @media (max-width: 900px) {
     .page.active { grid-template-columns: 1fr; }
 
+    header { padding: 24px 20px 20px; }
+    h1 { font-size: 30px; }
+    h1 .arrow { margin: 0 4px; }
+    header p { max-width: 100%; }
+
+    .app-nav { padding: 0 20px; overflow-x: auto; }
+    .app-nav button { margin-right: 20px; white-space: nowrap; }
+
+    .dir-nav { padding: 20px 16px 0; gap: 8px; }
+    .dir-nav button { font-size: 14px; padding: 10px 8px; }
+
+    .page-nav { padding: 16px 16px 0; gap: 6px; overflow-x: auto; flex-wrap: nowrap; }
+    .page-nav button { padding: 9px 14px; font-size: 13px; white-space: nowrap; flex: none; }
+
+    .panel { padding: 20px 16px; }
+
+    .field-row { grid-template-columns: 1fr; }
+
+    .output-actions { flex-wrap: wrap; }
+    .output-actions button { width: 100%; }
+
+    .intro-word { font-size: 36px; }
+    .intro-bars { height: 44px; }
+    .intro-bars span { animation-name: introBarGrowMobile; }
+
     .editor-controls { padding: 20px 16px; }
     .editor-grid-wrap { margin: 16px; height: 480px; }
     .editor-export-bar { padding: 0 16px 24px; }
     .editor-export-bar button { margin-bottom: 8px; }
+  }
+
+  @keyframes introBarGrowMobile {
+    0% { height: 0; opacity: 0; }
+    100% { height: 44px; opacity: 1; }
   }
 
   .panel {
@@ -480,6 +510,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
     gap: 12px;
     font-size: 13px;
     color: var(--text-dim);
@@ -618,6 +649,7 @@
   <button id="navCharacters" type="button"><span class="dot"></span>Characters</button>
   <button id="navStages" type="button"><span class="dot"></span>Stages</button>
   <button id="navModFolder" type="button"><span class="dot"></span>Mod Folder</button>
+  <button id="navWeeks" type="button"><span class="dot"></span>Weeks</button>
 </nav>
 
 <main id="chartsPage" class="page active">
@@ -914,8 +946,66 @@
     </div>
 
     <div class="notes-info">
-      <strong>Converted automatically</strong> — <code>characters/*.json</code> → <code>data/characters/</code>, <code>stages/&lt;name&gt;.json</code> + matching <code>.lua</code> → <code>data/stages/</code>, each <code>data/&lt;songId&gt;/&lt;songId&gt;.json</code> (+ a sibling <code>events.json</code> if present, merged in) + <code>meta.txt</code> → <code>data/songs/&lt;songId&gt;/&lt;songId&gt;-chart.json</code> and <code>-metadata.json</code>. <code>songs/&lt;songId&gt;/*.ogg</code>, <code>images/characters/*</code>, and top-level <code>images/icons/*.png</code> are copied straight across (V-Slice uses the same layout for these — confirmed against a real mod). Other <code>images/&lt;folder&gt;/*</code> subfolders are copied to <code>shared/images/stages/&lt;folder&gt;/</code> as a best guess, skipping known UI-only folders. A basic <code>_polymod_meta.json</code> is generated from the zip's folder name — edit the description, version, and contributors by hand.<br><br>
-      <strong>Not converted — needs manual work</strong> — <code>weeks/*.json</code> (V-Slice's <code>data/levels/</code> format needs story-menu character props and a title asset Psych doesn't have; the report lists each week's song order as a reference), <code>custom_events/*</code>, dialogue <code>.txt</code> files, per-song <code>.lua</code> scripts beyond stages (<code>events.lua</code>, <code>script.lua</code> — these are code, not data), <code>notestyles</code>, menu music/SFX, and Psych-specific config (<code>characterList.txt</code>, <code>stageList.txt</code>, <code>weekList.txt</code>, <code>freeplayColors.txt</code>, <code>introText.txt</code>, <code>specialThanks.txt</code>, <code>main-view.xml</code>). All of it is listed in the report so nothing just silently disappears.
+      <strong>Converted automatically</strong> — <code>characters/*.json</code> → <code>data/characters/</code>, <code>stages/&lt;name&gt;.json</code> + matching <code>.lua</code> → <code>data/stages/</code>, each <code>data/&lt;songId&gt;/&lt;songId&gt;.json</code> (+ a sibling <code>events.json</code> if present, merged in) + <code>meta.txt</code> → <code>data/songs/&lt;songId&gt;/&lt;songId&gt;-chart.json</code> and <code>-metadata.json</code>, and <code>weeks/*.json</code> → <code>data/levels/</code> (same mapping as the Weeks tab — the song list and unlock flag come through, but the storymenu art doesn't exist in Psych's format, so those files still need <code>props</code>/<code>titleAsset</code>/<code>background</code> filled in by hand). <code>songs/&lt;songId&gt;/*.ogg</code>, <code>images/characters/*</code>, and top-level <code>images/icons/*.png</code> are copied straight across (V-Slice uses the same layout for these — confirmed against a real mod). Other <code>images/&lt;folder&gt;/*</code> subfolders are copied to <code>shared/images/stages/&lt;folder&gt;/</code> as a best guess, skipping known UI-only folders. A basic <code>_polymod_meta.json</code> is generated from the zip's folder name — edit the description, version, and contributors by hand.<br><br>
+      <strong>Not converted — needs manual work</strong> — <code>custom_events/*</code>, dialogue <code>.txt</code> files, per-song <code>.lua</code> scripts beyond stages (<code>events.lua</code>, <code>script.lua</code> — these are code, not data), <code>notestyles</code>, menu music/SFX, and Psych-specific config (<code>characterList.txt</code>, <code>stageList.txt</code>, <code>weekList.txt</code>, <code>freeplayColors.txt</code>, <code>introText.txt</code>, <code>specialThanks.txt</code>, <code>main-view.xml</code>). All of it is listed in the report so nothing just silently disappears.
+    </div>
+  </section>
+</main>
+
+<main id="weeksPage" class="page">
+  <section class="panel">
+    <h2><span class="tag from">FROM</span> Psych Engine</h2>
+    <p class="sub">Paste or upload a week JSON. Converts the song list and unlock flag directly — the story-menu character art, title image, and background color don't exist in Psych's format, so those stay editable placeholders on the right.</p>
+
+    <label class="first">Week JSON</label>
+    <div class="file-drop">
+      <span id="weekFileLabel">No file selected</span>
+      <button id="weekFileBtn" type="button">Upload .json</button>
+      <input type="file" id="weekFileInput" accept="application/json,.json">
+    </div>
+    <textarea id="weekInput" placeholder="{ &quot;weekName&quot;: &quot;Prologue&quot;, &quot;songs&quot;: [...] }" spellcheck="false"></textarea>
+
+    <div class="field-row">
+      <div>
+        <label class="first">Level name</label>
+        <input type="text" id="weekName" placeholder="Prologue">
+      </div>
+      <div>
+        <label class="first">Title asset path</label>
+        <input type="text" id="weekTitleAsset" placeholder="storymenu/titles/prologue">
+      </div>
+    </div>
+    <div class="field-row">
+      <div>
+        <label class="first">Background color</label>
+        <input type="text" id="weekBackground" placeholder="#000000">
+      </div>
+      <div>
+        <label class="first">Visible in story mode</label>
+        <select id="weekVisible">
+          <option value="true">true</option>
+          <option value="false">false</option>
+        </select>
+      </div>
+    </div>
+
+    <button id="weekConvertBtn" type="button">Convert week</button>
+    <div id="weekStatus"></div>
+  </section>
+
+  <section class="panel">
+    <h2><span class="tag to">TO</span> V-Slice</h2>
+    <p class="sub">Level JSON — save it as <code>data/levels/&lt;Name&gt;.json</code> (no spaces, matching case, e.g. "Vs Impostor" → <code>VsImpostor.json</code>).</p>
+
+    <textarea id="weekOutput" readonly spellcheck="false" placeholder="Converted level JSON will appear here."></textarea>
+    <div class="output-actions">
+      <button id="weekCopyBtn" type="button">Copy</button>
+      <button id="weekDownloadBtn" type="button">Download</button>
+    </div>
+
+    <div class="notes-info">
+      <strong>Field mapping</strong> — each song entry's display name becomes a lowercase song id in <code>songs</code> (matching the <code>data/songs/&lt;id&gt;/</code> folder convention — confirmed against a real mod, where "Winter-Horrorland" in the week file matches the <code>winter-horrorland</code> song folder exactly). <code>weekName</code> becomes <code>name</code>, and <code>hideStoryMode</code> inverts into <code>visible</code>.<br><br>
+      <strong>Not carried over</strong> — <code>props</code> is left empty: V-Slice's story-menu characters are full sprite-sheet animations with offsets and dance timing, and Psych's <code>weekCharacters</code> is just plain strings with none of that. <code>titleAsset</code> and <code>background</code> are filled from the fields on the left (or sensible placeholders) since Psych has no equivalent image/color to pull from — replace them with real assets before shipping. <code>storyName</code> and <code>weekBefore</code> also have no field in this schema.
     </div>
   </section>
 </main>
@@ -1113,6 +1203,13 @@
   <section class="panel" style="grid-column: 1 / -1;">
     <h2>Mod Folder <span style="color:var(--text-dim); font-weight:500; font-size:14px;">— V-Slice → Psych</span></h2>
     <p class="sub">Not built yet — the whole-folder converter only goes Psych → V-Slice for now. Use the Charts/Characters/Stages tabs above one file at a time for the reverse direction.</p>
+  </section>
+</main>
+
+<main id="weeksPageR" class="page">
+  <section class="panel" style="grid-column: 1 / -1;">
+    <h2>Weeks <span style="color:var(--text-dim); font-weight:500; font-size:14px;">— V-Slice → Psych</span></h2>
+    <p class="sub">Not built yet — level → week only goes Psych → V-Slice for now.</p>
   </section>
 </main>
 
@@ -1565,8 +1662,8 @@ document.getElementById('downloadBtn').addEventListener('click', function () {
 });
 
 var DIR_PAGES = {
-  forward: ['chartsPage', 'charactersPage', 'stagesPage', 'modFolderPage'],
-  reverse: ['chartsPageR', 'charactersPageR', 'stagesPageR', 'modFolderPageR']
+  forward: ['chartsPage', 'charactersPage', 'stagesPage', 'modFolderPage', 'weeksPage'],
+  reverse: ['chartsPageR', 'charactersPageR', 'stagesPageR', 'modFolderPageR', 'weeksPageR']
 };
 var currentDir = 'forward';
 var currentTool = 0;
@@ -1583,6 +1680,7 @@ function showPage() {
   document.getElementById('navCharacters').classList.toggle('active', currentTool === 1);
   document.getElementById('navStages').classList.toggle('active', currentTool === 2);
   document.getElementById('navModFolder').classList.toggle('active', currentTool === 3);
+  document.getElementById('navWeeks').classList.toggle('active', currentTool === 4);
 
   document.getElementById('navDirForward').classList.toggle('active', currentDir === 'forward');
   document.getElementById('navDirReverse').classList.toggle('active', currentDir === 'reverse');
@@ -1594,6 +1692,7 @@ document.getElementById('navCharts').addEventListener('click', function () { cur
 document.getElementById('navCharacters').addEventListener('click', function () { currentTool = 1; showPage(); });
 document.getElementById('navStages').addEventListener('click', function () { currentTool = 2; showPage(); });
 document.getElementById('navModFolder').addEventListener('click', function () { currentTool = 3; showPage(); });
+document.getElementById('navWeeks').addEventListener('click', function () { currentTool = 4; showPage(); });
 
 var lastCharResult = null;
 
@@ -3233,6 +3332,34 @@ document.getElementById('editorDownloadBtn').addEventListener('click', function 
   URL.revokeObjectURL(url);
 });
 
+function weekSlug(s) {
+  return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'week';
+}
+
+function weekFilenameFromName(name) {
+  return String(name || 'Week').replace(/[^a-zA-Z0-9]+/g, '') || 'Week';
+}
+
+function convertPsychWeek(psychWeek, meta) {
+  meta = meta || {};
+  var songs = (psychWeek.songs || []).map(function (entry) {
+    var name = Array.isArray(entry) ? entry[0] : entry;
+    return String(name || '').toLowerCase();
+  });
+  var slug = weekSlug(psychWeek.weekName);
+  var visible = meta.visible !== undefined ? meta.visible : (psychWeek.hideStoryMode !== undefined ? !psychWeek.hideStoryMode : true);
+
+  return {
+    version: '1.0.0',
+    name: meta.name || psychWeek.weekName || 'Week',
+    titleAsset: meta.titleAsset || ('storymenu/titles/' + slug),
+    visible: visible,
+    props: [],
+    background: meta.background || '#000000',
+    songs: songs
+  };
+}
+
 function parseModMetaTxt(text) {
   var lines = text.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(function (l) { return l.length; });
   var songName = lines[0] || '';
@@ -3346,7 +3473,7 @@ async function convertModFolderZip(file) {
 
   var outZip = new JSZip();
   var outRoot = (rootInfo.root || 'converted-mod') + ' (V-Slice)';
-  var counts = { characters: 0, stages: 0, songs: 0, copied: 0 };
+  var counts = { characters: 0, stages: 0, songs: 0, copied: 0, levels: 0 };
   var errors = [];
 
   for (var ci = 0; ci < characterFiles.length; ci++) {
@@ -3423,15 +3550,21 @@ async function convertModFolderZip(file) {
     }
   }
 
-  var weekSummaryLines = [];
+  var levelLines = [];
+  var levelFilenames = {};
   for (var wi = 0; wi < weekFiles.length; wi++) {
     try {
       var weekText = await inZip.files[weekFiles[wi].path].async('string');
       var weekJson = JSON.parse(weekText);
-      var songNames = (weekJson.songs || []).map(function (s) { return Array.isArray(s) ? s[0] : s; });
-      weekSummaryLines.push('  ' + (weekJson.weekName || weekFiles[wi].name) + ': ' + songNames.join(', '));
+      var levelResult = convertPsychWeek(weekJson, {});
+      var levelFilename = weekFilenameFromName(levelResult.name);
+      if (levelFilenames[levelFilename]) levelFilename = levelFilename + '_' + weekFiles[wi].name;
+      levelFilenames[levelFilename] = true;
+      outZip.file(outRoot + '/data/levels/' + levelFilename + '.json', JSON.stringify(levelResult, null, 2));
+      counts.levels++;
+      levelLines.push('  ' + levelResult.name + ' (data/levels/' + levelFilename + '.json): ' + levelResult.songs.join(', '));
     } catch (err) {
-      weekSummaryLines.push('  ' + weekFiles[wi].name + ': (could not read song list)');
+      errors.push('Week ' + weekFiles[wi].name + ': ' + err.message);
     }
   }
 
@@ -3453,6 +3586,7 @@ async function convertModFolderZip(file) {
   report.push('  characters: ' + counts.characters);
   report.push('  stages: ' + counts.stages);
   report.push('  songs (chart + metadata): ' + counts.songs);
+  report.push('  levels (from weeks): ' + counts.levels);
   report.push('  files copied directly (audio/images): ' + counts.copied);
 
   if (errors.length) {
@@ -3461,10 +3595,10 @@ async function convertModFolderZip(file) {
     errors.forEach(function (e) { report.push('  - ' + e); });
   }
 
-  if (weekSummaryLines.length) {
+  if (levelLines.length) {
     report.push('');
-    report.push('Week/story files found — data/levels/*.json needs to be built by hand (story-menu character art and a title asset aren\'t things Psych stores), but here\'s the song order for reference:');
-    weekSummaryLines.forEach(function (l) { report.push(l); });
+    report.push('Levels converted from weeks (song list + visibility only — props/titleAsset/background are placeholders, since Psych has no story-menu art to pull from):');
+    levelLines.forEach(function (l) { report.push(l); });
   }
 
   var skipReasons = Object.keys(skipped);
@@ -3529,6 +3663,102 @@ document.getElementById('modDownloadBtn').addEventListener('click', function () 
   var a = document.createElement('a');
   a.href = url;
   a.download = 'converted-mod.zip';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+function setWeekStatus(text, kind) {
+  var el = document.getElementById('weekStatus');
+  el.textContent = text;
+  el.className = kind || '';
+}
+
+document.getElementById('weekFileBtn').addEventListener('click', function () {
+  document.getElementById('weekFileInput').click();
+});
+document.getElementById('weekFileInput').addEventListener('change', function (e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('weekFileLabel').textContent = file.name;
+  var reader = new FileReader();
+  reader.onload = function (ev) {
+    document.getElementById('weekInput').value = ev.target.result;
+    autofillWeekFields();
+  };
+  reader.readAsText(file);
+});
+
+document.getElementById('weekInput').addEventListener('input', autofillWeekFields);
+
+var weekAutofillTouched = { name: false, titleAsset: false, background: false, visible: false };
+document.getElementById('weekName').addEventListener('input', function () { weekAutofillTouched.name = true; });
+document.getElementById('weekTitleAsset').addEventListener('input', function () { weekAutofillTouched.titleAsset = true; });
+document.getElementById('weekBackground').addEventListener('input', function () { weekAutofillTouched.background = true; });
+document.getElementById('weekVisible').addEventListener('change', function () { weekAutofillTouched.visible = true; });
+
+function autofillWeekFields() {
+  var raw = document.getElementById('weekInput').value.trim();
+  if (!raw) return;
+  var parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    return;
+  }
+  if (!weekAutofillTouched.name && parsed.weekName) document.getElementById('weekName').value = parsed.weekName;
+  if (!weekAutofillTouched.titleAsset) document.getElementById('weekTitleAsset').value = 'storymenu/titles/' + weekSlug(parsed.weekName);
+  if (!weekAutofillTouched.visible && parsed.hideStoryMode !== undefined) {
+    document.getElementById('weekVisible').value = parsed.hideStoryMode ? 'false' : 'true';
+  }
+}
+
+document.getElementById('weekConvertBtn').addEventListener('click', function () {
+  var raw = document.getElementById('weekInput').value.trim();
+  if (!raw) {
+    setWeekStatus('Paste or upload a Psych week JSON first.', 'err');
+    return;
+  }
+  var parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    setWeekStatus('JSON doesn\'t parse: ' + err.message, 'err');
+    return;
+  }
+
+  var meta = {
+    name: document.getElementById('weekName').value.trim(),
+    titleAsset: document.getElementById('weekTitleAsset').value.trim(),
+    background: document.getElementById('weekBackground').value.trim(),
+    visible: document.getElementById('weekVisible').value === 'true'
+  };
+
+  var result = convertPsychWeek(parsed, meta);
+  document.getElementById('weekOutput').value = JSON.stringify(result, null, 2);
+  setWeekStatus('Converted ' + result.songs.length + ' song(s). Save as data/levels/' + weekFilenameFromName(result.name) + '.json.', 'ok');
+});
+
+document.getElementById('weekCopyBtn').addEventListener('click', function () {
+  var text = document.getElementById('weekOutput').value;
+  if (!text) return;
+  var temp = document.createElement('textarea');
+  temp.value = text;
+  document.body.appendChild(temp);
+  temp.select();
+  document.execCommand('copy');
+  document.body.removeChild(temp);
+  setWeekStatus('Copied to clipboard.', 'ok');
+});
+
+document.getElementById('weekDownloadBtn').addEventListener('click', function () {
+  var text = document.getElementById('weekOutput').value;
+  if (!text) return;
+  var name = weekFilenameFromName(document.getElementById('weekName').value.trim() || 'Week');
+  var blob = new Blob([text], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = name + '.json';
   a.click();
   URL.revokeObjectURL(url);
 });
