@@ -584,6 +584,7 @@
     margin-top: 18px;
     display: flex;
     justify-content: center;
+    position: relative;
     background:
       linear-gradient(45deg, #2a2933 25%, transparent 25%),
       linear-gradient(-45deg, #2a2933 25%, transparent 25%),
@@ -595,6 +596,40 @@
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 12px;
+  }
+
+  .canvas-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: rgba(10,10,14,0.78);
+    border-radius: 8px;
+    z-index: 5;
+    backdrop-filter: blur(2px);
+  }
+
+  .canvas-spinner {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 3px solid rgba(255,255,255,0.15);
+    border-top-color: var(--green);
+    animation: canvasSpin 0.8s linear infinite;
+  }
+
+  @keyframes canvasSpin {
+    to { transform: rotate(360deg); }
+  }
+
+  .canvas-loading-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    color: var(--text-dim);
   }
 
   #charEditorCanvas, #stageEditorCanvas {
@@ -1645,7 +1680,7 @@
   <section class="panel" style="grid-column: 1 / -1;">
     <div class="editor-controls">
       <h2>Character Editor <span style="color:var(--text-dim); font-weight:500; font-size:14px;">— spritesheet preview + JSON editing</span></h2>
-      <p class="sub">Upload a spritesheet PNG plus its atlas (Sparrow XML or TexturePacker JSON) to preview animations frame by frame. Frames are grouped into animations by stripping the trailing frame number (e.g. "BF idle0000" → prefix "BF idle"). Edit the character.json on the right and use "Insert detected animations" to pull the atlas's prefixes straight in.</p>
+      <p class="sub">Upload a spritesheet PNG and/or its atlas (Sparrow XML or TexturePacker JSON) — either one works alone (PNG shows the whole sheet, atlas alone lets you insert animations with no image), both together preview individual frames. Frames are grouped into animations by stripping the trailing frame number (e.g. "BF idle0000" → prefix "BF idle"). Edit the character.json on the right and use "Insert detected animations" to pull the atlas's prefixes straight in.</p>
 
       <div class="field-row">
         <div>
@@ -1668,6 +1703,10 @@
 
       <div id="charEditorCanvasWrap">
         <canvas id="charEditorCanvas" width="360" height="360"></canvas>
+        <div id="charEditorLoading" class="canvas-loading" style="display:none;">
+          <div class="canvas-spinner"></div>
+          <div class="canvas-loading-text">Loading…</div>
+        </div>
       </div>
       <div id="charEditorFrameInfo" style="font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--text-dim); text-align:center; margin-top:8px;">No atlas loaded yet.</div>
 
@@ -1708,7 +1747,7 @@
   <section class="panel" style="grid-column: 1 / -1;">
     <div class="editor-controls">
       <h2>Stage Editor <span style="color:var(--text-dim); font-weight:500; font-size:14px;">— spritesheet preview + JSON editing</span></h2>
-      <p class="sub">Same idea as the Character Editor, but for stage props: upload a prop's spritesheet PNG plus its atlas (Sparrow XML or TexturePacker JSON) to preview it, then insert the detected animations straight into a prop inside your stage.json.</p>
+      <p class="sub">Same idea as the Character Editor, but for stage props. Both files are optional and work independently: a PNG alone previews the whole spritesheet, an atlas alone (Sparrow XML or TexturePacker JSON) lets you insert its animations into a prop without any image, and both together let you preview individual frames.</p>
 
       <div class="field-row">
         <div>
@@ -1731,6 +1770,10 @@
 
       <div id="stageEditorCanvasWrap" class="char-canvas-wrap">
         <canvas id="stageEditorCanvas" width="360" height="360"></canvas>
+        <div id="stageEditorLoading" class="canvas-loading" style="display:none;">
+          <div class="canvas-spinner"></div>
+          <div class="canvas-loading-text">Loading…</div>
+        </div>
       </div>
       <div id="stageEditorFrameInfo" style="font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--text-dim); text-align:center; margin-top:8px;">No atlas loaded yet.</div>
 
@@ -2379,16 +2422,42 @@ function setCharEditorStatus(text, kind) {
   el.className = kind || '';
 }
 
+function setCharEditorLoading(loading) {
+  var el = document.getElementById('charEditorLoading');
+  if (el) el.style.display = loading ? '' : 'none';
+}
+
 function renderCharEditorFrame() {
   var canvas = document.getElementById('charEditorCanvas');
   var ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  if (!charEditorCurrentPrefix || !charEditorImage.complete || !charEditorImage.naturalWidth) {
-    document.getElementById('charEditorFrameInfo').textContent = 'No atlas loaded yet.';
+
+  var hasImage = charEditorImage.complete && !!charEditorImage.naturalWidth;
+  var frames = charEditorCurrentPrefix ? charEditorGroups[charEditorCurrentPrefix] : null;
+  var hasFrames = frames && frames.length;
+
+  if (!hasImage && !hasFrames) {
+    document.getElementById('charEditorFrameInfo').textContent = 'No spritesheet or atlas loaded yet.';
     return;
   }
-  var frames = charEditorGroups[charEditorCurrentPrefix];
-  if (!frames || !frames.length) return;
+
+  if (!hasFrames) {
+    var iw = charEditorImage.naturalWidth, ih = charEditorImage.naturalHeight;
+    var wholeScale = Math.min(canvas.width / iw, canvas.height / ih, 4);
+    if (!isFinite(wholeScale) || wholeScale <= 0) wholeScale = 1;
+    var wOffsetX = (canvas.width - iw * wholeScale) / 2;
+    var wOffsetY = (canvas.height - ih * wholeScale) / 2;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(charEditorImage, 0, 0, iw, ih, wOffsetX, wOffsetY, iw * wholeScale, ih * wholeScale);
+    document.getElementById('charEditorFrameInfo').textContent = 'Whole spritesheet (upload an atlas to see individual frames).';
+    return;
+  }
+
+  if (!hasImage) {
+    document.getElementById('charEditorFrameInfo').textContent = charEditorCurrentPrefix + ' — ' + frames.length + ' frame(s) found (upload the PNG to preview them).';
+    return;
+  }
+
   charEditorCurrentFrameIdx = ((charEditorCurrentFrameIdx % frames.length) + frames.length) % frames.length;
   var f = frames[charEditorCurrentFrameIdx];
   var scale = Math.min(canvas.width / f.frameWidth, canvas.height / f.frameHeight, 4);
@@ -2423,9 +2492,10 @@ document.getElementById('charEditorPngInput').addEventListener('change', functio
   var file = e.target.files[0];
   if (!file) return;
   document.getElementById('charEditorPngLabel').textContent = file.name;
+  setCharEditorLoading(true);
   charEditorImage = new Image();
-  charEditorImage.onload = function () { renderCharEditorFrame(); };
-  charEditorImage.onerror = function () { setCharEditorStatus('Could not load that image.', 'err'); };
+  charEditorImage.onload = function () { setCharEditorLoading(false); renderCharEditorFrame(); };
+  charEditorImage.onerror = function () { setCharEditorLoading(false); setCharEditorStatus('Could not load that image.', 'err'); };
   charEditorImage.src = URL.createObjectURL(file);
 });
 
@@ -2436,6 +2506,7 @@ document.getElementById('charEditorAtlasInput').addEventListener('change', funct
   var file = e.target.files[0];
   if (!file) return;
   document.getElementById('charEditorAtlasLabel').textContent = file.name;
+  setCharEditorLoading(true);
   var reader = new FileReader();
   reader.onload = function (ev) {
     var text = ev.target.result;
@@ -2460,7 +2531,9 @@ document.getElementById('charEditorAtlasInput').addEventListener('change', funct
     } catch (err) {
       setCharEditorStatus('Could not parse atlas: ' + err.message, 'err');
     }
+    setCharEditorLoading(false);
   };
+  reader.onerror = function () { setCharEditorLoading(false); setCharEditorStatus('Could not read that file.', 'err'); };
   reader.readAsText(file);
 });
 
@@ -2555,16 +2628,42 @@ function setStageEditorStatus(text, kind) {
   el.className = kind || '';
 }
 
+function setStageEditorLoading(loading) {
+  var el = document.getElementById('stageEditorLoading');
+  if (el) el.style.display = loading ? '' : 'none';
+}
+
 function renderStageEditorFrame() {
   var canvas = document.getElementById('stageEditorCanvas');
   var ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  if (!stageEditorCurrentPrefix || !stageEditorImage.complete || !stageEditorImage.naturalWidth) {
-    document.getElementById('stageEditorFrameInfo').textContent = 'No atlas loaded yet.';
+
+  var hasImage = stageEditorImage.complete && !!stageEditorImage.naturalWidth;
+  var frames = stageEditorCurrentPrefix ? stageEditorGroups[stageEditorCurrentPrefix] : null;
+  var hasFrames = frames && frames.length;
+
+  if (!hasImage && !hasFrames) {
+    document.getElementById('stageEditorFrameInfo').textContent = 'No spritesheet or atlas loaded yet.';
     return;
   }
-  var frames = stageEditorGroups[stageEditorCurrentPrefix];
-  if (!frames || !frames.length) return;
+
+  if (!hasFrames) {
+    var iw = stageEditorImage.naturalWidth, ih = stageEditorImage.naturalHeight;
+    var wholeScale = Math.min(canvas.width / iw, canvas.height / ih, 4);
+    if (!isFinite(wholeScale) || wholeScale <= 0) wholeScale = 1;
+    var wOffsetX = (canvas.width - iw * wholeScale) / 2;
+    var wOffsetY = (canvas.height - ih * wholeScale) / 2;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(stageEditorImage, 0, 0, iw, ih, wOffsetX, wOffsetY, iw * wholeScale, ih * wholeScale);
+    document.getElementById('stageEditorFrameInfo').textContent = 'Whole spritesheet (upload an atlas to see individual frames).';
+    return;
+  }
+
+  if (!hasImage) {
+    document.getElementById('stageEditorFrameInfo').textContent = stageEditorCurrentPrefix + ' — ' + frames.length + ' frame(s) found (upload the PNG to preview them).';
+    return;
+  }
+
   stageEditorCurrentFrameIdx = ((stageEditorCurrentFrameIdx % frames.length) + frames.length) % frames.length;
   var f = frames[stageEditorCurrentFrameIdx];
   var scale = Math.min(canvas.width / f.frameWidth, canvas.height / f.frameHeight, 4);
@@ -2599,9 +2698,10 @@ document.getElementById('stageEditorPngInput').addEventListener('change', functi
   var file = e.target.files[0];
   if (!file) return;
   document.getElementById('stageEditorPngLabel').textContent = file.name;
+  setStageEditorLoading(true);
   stageEditorImage = new Image();
-  stageEditorImage.onload = function () { renderStageEditorFrame(); };
-  stageEditorImage.onerror = function () { setStageEditorStatus('Could not load that image.', 'err'); };
+  stageEditorImage.onload = function () { setStageEditorLoading(false); renderStageEditorFrame(); };
+  stageEditorImage.onerror = function () { setStageEditorLoading(false); setStageEditorStatus('Could not load that image.', 'err'); };
   stageEditorImage.src = URL.createObjectURL(file);
 });
 
@@ -2612,6 +2712,7 @@ document.getElementById('stageEditorAtlasInput').addEventListener('change', func
   var file = e.target.files[0];
   if (!file) return;
   document.getElementById('stageEditorAtlasLabel').textContent = file.name;
+  setStageEditorLoading(true);
   var reader = new FileReader();
   reader.onload = function (ev) {
     var text = ev.target.result;
@@ -2636,7 +2737,9 @@ document.getElementById('stageEditorAtlasInput').addEventListener('change', func
     } catch (err) {
       setStageEditorStatus('Could not parse atlas: ' + err.message, 'err');
     }
+    setStageEditorLoading(false);
   };
+  reader.onerror = function () { setStageEditorLoading(false); setStageEditorStatus('Could not read that file.', 'err'); };
   reader.readAsText(file);
 });
 
@@ -2688,6 +2791,7 @@ document.getElementById('stageEditorInsertAnimsBtn').addEventListener('click', f
   }
 
   var prop = obj.props.find(function (p) { return p.name === propName; });
+  var isNewProp = !prop;
   if (!prop) {
     var assetPath = document.getElementById('stageEditorAssetPath').value.trim();
     prop = { name: propName, assetPath: assetPath || propName, position: [0, 0], animations: [] };
@@ -2705,7 +2809,16 @@ document.getElementById('stageEditorInsertAnimsBtn').addEventListener('click', f
   });
 
   document.getElementById('stageEditorJsonInput').value = JSON.stringify(obj, null, 2);
-  setStageEditorStatus('Added ' + added + ' new animation(s) to prop "' + propName + '".', added ? 'ok' : '');
+
+  if (added) {
+    setStageEditorStatus('Added ' + added + ' new animation(s) to prop "' + propName + '".', 'ok');
+  } else if (isNewProp) {
+    setStageEditorStatus('Created prop "' + propName + '" (no atlas loaded, so no animations yet — upload one and hit this again whenever you\'re ready).', 'ok');
+  } else if (!Object.keys(stageEditorGroups).length) {
+    setStageEditorStatus('Prop "' + propName + '" already exists. No atlas loaded, so nothing to add — upload one first.', '');
+  } else {
+    setStageEditorStatus('Prop "' + propName + '" already has all of this atlas\'s animations.', '');
+  }
 });
 
 document.getElementById('stageEditorCopyBtn').addEventListener('click', function () {
