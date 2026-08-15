@@ -153,11 +153,13 @@
     height: 620px;
     position: relative;
     background: var(--surface);
+    -webkit-overflow-scrolling: touch;
   }
 
   .editor-grid-inner {
     position: relative;
     cursor: crosshair;
+    touch-action: pan-y;
   }
 
   .editor-lane-bg {
@@ -212,13 +214,33 @@
     left: 0;
     right: 0;
     bottom: 0;
-    height: 7px;
+    height: 10px;
     cursor: ns-resize;
     background: rgba(255,255,255,0.3);
     border-radius: 0 0 4px 4px;
   }
 
   .editor-note-handle:hover { background: rgba(255,255,255,0.55); }
+
+  .editor-note-delete {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--red);
+    color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 18px;
+    text-align: center;
+    cursor: pointer;
+    z-index: 3;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.4);
+  }
+
+  .editor-note-delete:hover { background: #ff7580; }
 
   #editorPlayheadLine {
     position: absolute;
@@ -375,6 +397,11 @@
 
   @media (max-width: 900px) {
     .page.active { grid-template-columns: 1fr; }
+
+    .editor-controls { padding: 20px 16px; }
+    .editor-grid-wrap { margin: 16px; height: 480px; }
+    .editor-export-bar { padding: 0 16px 24px; }
+    .editor-export-bar button { margin-bottom: 8px; }
   }
 
   .panel {
@@ -1051,7 +1078,7 @@
   <section class="panel" style="grid-column: 1 / -1;">
     <div class="editor-controls">
       <h2>Chart Editor <span style="color:var(--text-dim); font-weight:500; font-size:14px;">— V-Slice format, notes only</span></h2>
-      <p class="sub">Drag on an empty lane to place a sustain note (a quick click with no drag places a tap note instead). Drag an existing note to move it, drag its bottom edge to resize the sustain, click it without moving to delete it. Load audio to hear the song while editing — right-click the grid to seek. No undo yet, so keep a backup of your chart before big edits.</p>
+      <p class="sub">Drag on an empty lane to place a sustain note (a quick tap with no drag places a tap note instead). Drag an existing note to move it, drag its bottom edge to resize the sustain, tap it without moving (or hit the red × on its corner) to delete it. Works with touch on mobile — dragging on empty space still scrolls normally. Load audio to hear the song while editing — right-click the grid to seek. No undo yet, so keep a backup of your chart before big edits.</p>
 
       <label class="first">Chart JSON (V-Slice)</label>
       <div class="file-drop">
@@ -1075,9 +1102,13 @@
         <button id="editorAudioFileBtn" type="button">Upload audio</button>
         <input type="file" id="editorAudioFileInput" accept="audio/*">
       </div>
-      <div style="display:flex; align-items:center; gap:12px; margin-top:10px;">
+      <div style="display:flex; align-items:center; gap:12px; margin-top:10px; flex-wrap:wrap;">
         <button id="editorPlayBtn" type="button" disabled>Play</button>
         <span id="editorAudioTime" style="font-family:'JetBrains Mono', monospace; font-size:13px; color:var(--text-dim);">0:00 / 0:00</span>
+        <label style="display:flex; align-items:center; gap:6px; font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--text-dim); margin:0;">
+          Vol
+          <input type="range" id="editorVolume" min="0" max="100" value="70" style="width:90px;">
+        </label>
       </div>
       <audio id="editorAudioEl" style="display:none;"></audio>
 
@@ -2859,6 +2890,13 @@ function renderEditorGrid() {
     handle._note = note;
     el.appendChild(handle);
 
+    var delBtn = document.createElement('div');
+    delBtn.className = 'editor-note-delete';
+    delBtn.textContent = '\u00d7';
+    delBtn.title = 'Delete note';
+    delBtn._note = note;
+    el.appendChild(delBtn);
+
     wrap.appendChild(el);
   });
 
@@ -2878,11 +2916,11 @@ function editorUpdateNoteEl(el, note) {
   el.style.height = Math.max(14, editorTimeToY(note.l || 0)) + 'px';
 }
 
-function editorClientToLocal(ev, wrap) {
+function editorClientToLocal(clientX, clientY, wrap) {
   var rect = wrap.getBoundingClientRect();
   return {
-    x: ev.clientX - rect.left,
-    y: ev.clientY - rect.top + wrap.scrollTop
+    x: clientX - rect.left,
+    y: clientY - rect.top + wrap.scrollTop
   };
 }
 
@@ -2890,7 +2928,14 @@ function editorLaneFromX(x) {
   return Math.max(0, Math.min(editorNumLanes - 1, Math.floor(x / editorColWidth)));
 }
 
+function editorPointFromEvent(ev) {
+  if (ev.touches && ev.touches.length) return { x: ev.touches[0].clientX, y: ev.touches[0].clientY };
+  if (ev.changedTouches && ev.changedTouches.length) return { x: ev.changedTouches[0].clientX, y: ev.changedTouches[0].clientY };
+  return { x: ev.clientX, y: ev.clientY };
+}
+
 var editorDrag = null;
+var editorTouchPending = null;
 var EDITOR_DRAG_PX_THRESHOLD = 5;
 
 function findEditorNoteElement(note) {
@@ -2901,32 +2946,14 @@ function findEditorNoteElement(note) {
   return null;
 }
 
-document.getElementById('editorGridInner').addEventListener('mousedown', function (ev) {
-  if (!editorChart || ev.button !== 0) return;
-  var wrap = document.getElementById('editorGridInner');
-  var local = editorClientToLocal(ev, wrap);
-  var handleEl = ev.target.classList && ev.target.classList.contains('editor-note-handle') ? ev.target : null;
-  var noteEl = !handleEl && ev.target.closest ? ev.target.closest('.editor-note') : null;
+function editorDeleteNote(note) {
+  var pos = editorNotes.indexOf(note);
+  if (pos !== -1) editorNotes.splice(pos, 1);
+  renderEditorGrid();
+}
 
-  if (handleEl) {
-    editorDrag = { mode: 'resize', note: handleEl._note, el: handleEl.parentNode, moved: false, startY: local.y };
-  } else if (noteEl) {
-    editorDrag = { mode: 'move', note: noteEl._note, el: noteEl, moved: false, startX: local.x, startY: local.y, startT: noteEl._note.t };
-  } else {
-    var lane = editorLaneFromX(local.x);
-    var t = Math.max(0, editorSnapTime(editorYToTime(local.y)));
-    var newNote = { t: t, d: lane, l: 0, p: [] };
-    editorNotes.push(newNote);
-    renderEditorGrid();
-    editorDrag = { mode: 'create', note: newNote, el: findEditorNoteElement(newNote), moved: false, startY: local.y };
-  }
-  ev.preventDefault();
-});
-
-document.addEventListener('mousemove', function (ev) {
+function editorApplyDragMove(local) {
   if (!editorDrag) return;
-  var wrap = document.getElementById('editorGridInner');
-  var local = editorClientToLocal(ev, wrap);
   var dy = local.y - editorDrag.startY;
   var dx = editorDrag.startX !== undefined ? local.x - editorDrag.startX : 0;
   if (Math.abs(dy) > EDITOR_DRAG_PX_THRESHOLD || Math.abs(dx) > EDITOR_DRAG_PX_THRESHOLD) editorDrag.moved = true;
@@ -2943,9 +2970,9 @@ document.addEventListener('mousemove', function (ev) {
     editorDrag.note.d = newLane;
     if (editorDrag.el) editorUpdateNoteEl(editorDrag.el, editorDrag.note);
   }
-});
+}
 
-document.addEventListener('mouseup', function () {
+function editorFinalizeDrag() {
   if (!editorDrag) return;
   if (editorDrag.mode === 'move' && !editorDrag.moved) {
     var pos = editorNotes.indexOf(editorDrag.note);
@@ -2953,6 +2980,101 @@ document.addEventListener('mouseup', function () {
   }
   editorDrag = null;
   renderEditorGrid();
+}
+
+function editorGridStart(clientX, clientY, target) {
+  if (!editorChart) return;
+  var wrap = document.getElementById('editorGridInner');
+  var local = editorClientToLocal(clientX, clientY, wrap);
+  var delBtn = target.classList && target.classList.contains('editor-note-delete') ? target : null;
+  var handleEl = !delBtn && target.classList && target.classList.contains('editor-note-handle') ? target : null;
+  var noteEl = !delBtn && !handleEl && target.closest ? target.closest('.editor-note') : null;
+
+  if (delBtn) {
+    editorDeleteNote(delBtn._note);
+    return 'handled';
+  }
+  if (handleEl) {
+    editorDrag = { mode: 'resize', note: handleEl._note, el: handleEl.parentNode, moved: false, startY: local.y };
+    return 'drag';
+  }
+  if (noteEl) {
+    editorDrag = { mode: 'move', note: noteEl._note, el: noteEl, moved: false, startX: local.x, startY: local.y, startT: noteEl._note.t };
+    return 'drag';
+  }
+  var lane = editorLaneFromX(local.x);
+  var t = Math.max(0, editorSnapTime(editorYToTime(local.y)));
+  var newNote = { t: t, d: lane, l: 0, p: [] };
+  editorNotes.push(newNote);
+  renderEditorGrid();
+  editorDrag = { mode: 'create', note: newNote, el: findEditorNoteElement(newNote), moved: false, startY: local.y };
+  return 'drag';
+}
+
+document.getElementById('editorGridInner').addEventListener('mousedown', function (ev) {
+  if (ev.button !== 0) return;
+  var result = editorGridStart(ev.clientX, ev.clientY, ev.target);
+  if (result) ev.preventDefault();
+});
+
+document.addEventListener('mousemove', function (ev) {
+  if (!editorDrag) return;
+  var wrap = document.getElementById('editorGridInner');
+  editorApplyDragMove(editorClientToLocal(ev.clientX, ev.clientY, wrap));
+});
+
+document.addEventListener('mouseup', function () {
+  editorFinalizeDrag();
+});
+
+document.getElementById('editorGridInner').addEventListener('touchstart', function (ev) {
+  if (!editorChart) return;
+  var pt = editorPointFromEvent(ev);
+  var delBtn = ev.target.classList && ev.target.classList.contains('editor-note-delete') ? ev.target : null;
+  var handleEl = !delBtn && ev.target.classList && ev.target.classList.contains('editor-note-handle') ? ev.target : null;
+  var noteEl = !delBtn && !handleEl && ev.target.closest ? ev.target.closest('.editor-note') : null;
+
+  if (delBtn) {
+    ev.preventDefault();
+    editorDeleteNote(delBtn._note);
+    return;
+  }
+  if (handleEl || noteEl) {
+    // Dragging an existing note or its handle always takes over the gesture (no scrolling while doing this).
+    ev.preventDefault();
+    editorGridStart(pt.x, pt.y, ev.target);
+  } else {
+    // Empty space: don't hijack the gesture yet, it might be a scroll. Decide on touchend.
+    var wrap = document.getElementById('editorGridInner');
+    var local = editorClientToLocal(pt.x, pt.y, wrap);
+    editorTouchPending = { x: local.x, y: local.y, lane: editorLaneFromX(local.x) };
+  }
+}, { passive: false });
+
+document.addEventListener('touchmove', function (ev) {
+  if (editorDrag) {
+    ev.preventDefault();
+    var pt = editorPointFromEvent(ev);
+    var wrap = document.getElementById('editorGridInner');
+    editorApplyDragMove(editorClientToLocal(pt.x, pt.y, wrap));
+  } else if (editorTouchPending) {
+    var pt2 = editorPointFromEvent(ev);
+    var wrap2 = document.getElementById('editorGridInner');
+    var local2 = editorClientToLocal(pt2.x, pt2.y, wrap2);
+    var dist = Math.abs(local2.y - editorTouchPending.y) + Math.abs(local2.x - editorTouchPending.x);
+    if (dist > EDITOR_DRAG_PX_THRESHOLD * 3) editorTouchPending = null;
+  }
+}, { passive: false });
+
+document.addEventListener('touchend', function () {
+  if (editorDrag) {
+    editorFinalizeDrag();
+  } else if (editorTouchPending) {
+    var t = Math.max(0, editorSnapTime(editorYToTime(editorTouchPending.y)));
+    editorNotes.push({ t: t, d: editorTouchPending.lane, l: 0, p: [] });
+    editorTouchPending = null;
+    renderEditorGrid();
+  }
 });
 
 document.getElementById('editorGridInner').addEventListener('contextmenu', function (ev) {
@@ -2960,7 +3082,7 @@ document.getElementById('editorGridInner').addEventListener('contextmenu', funct
   if (!audio.src) return;
   ev.preventDefault();
   var wrap = document.getElementById('editorGridInner');
-  var local = editorClientToLocal(ev, wrap);
+  var local = editorClientToLocal(ev.clientX, ev.clientY, wrap);
   var t = editorYToTime(local.y);
   audio.currentTime = Math.max(0, t / 1000);
   updateEditorPlayhead();
@@ -2975,8 +3097,13 @@ document.getElementById('editorAudioFileInput').addEventListener('change', funct
   document.getElementById('editorAudioFileLabel').textContent = file.name;
   var audio = document.getElementById('editorAudioEl');
   audio.src = URL.createObjectURL(file);
+  audio.volume = toNumber(document.getElementById('editorVolume').value, 70) / 100;
   audio.load();
   document.getElementById('editorPlayBtn').disabled = false;
+});
+
+document.getElementById('editorVolume').addEventListener('input', function () {
+  document.getElementById('editorAudioEl').volume = toNumber(this.value, 70) / 100;
 });
 
 document.getElementById('editorPlayBtn').addEventListener('click', function () {
