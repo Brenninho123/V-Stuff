@@ -262,67 +262,185 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 18px;
+    gap: 22px;
     cursor: pointer;
-    transition: opacity 0.5s ease;
+    overflow: hidden;
+    transition: opacity 0.6s ease, transform 0.6s ease;
   }
 
-  .intro-overlay.intro-hide { opacity: 0; pointer-events: none; }
+  .intro-overlay.intro-hide { opacity: 0; transform: scale(1.04); pointer-events: none; }
+
+  .intro-grid {
+    position: absolute;
+    inset: -20%;
+    background-image:
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.035) 0 1px, transparent 1px 46px),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.035) 0 1px, transparent 1px 46px);
+    animation: introGridDrift 12s linear infinite;
+    mask-image: radial-gradient(ellipse at center, #000 40%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse at center, #000 40%, transparent 75%);
+  }
+
+  @keyframes introGridDrift {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(46px, 46px); }
+  }
+
+  .intro-scan {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 120px;
+    background: linear-gradient(180deg, transparent, rgba(255,255,255,0.05), transparent);
+    animation: introScanSweep 3.2s ease-in-out infinite;
+  }
+
+  @keyframes introScanSweep {
+    0% { top: -120px; }
+    100% { top: 100%; }
+  }
 
   .intro-bars {
     display: flex;
-    gap: 6px;
-    height: 64px;
+    gap: 8px;
+    height: 70px;
     align-items: flex-end;
+    position: relative;
+    z-index: 1;
   }
 
   .intro-bars span {
-    width: 14px;
+    width: 15px;
     border-radius: 3px;
-    animation: introBarGrow 0.7s cubic-bezier(.2,.9,.3,1.3) both;
+    transform-origin: bottom center;
+    animation: introBarHit 0.9s cubic-bezier(.2,.9,.25,1.4) both;
   }
 
-  .intro-bars span:nth-child(1) { background: var(--purple); animation-delay: 0s; }
-  .intro-bars span:nth-child(2) { background: var(--blue); animation-delay: 0.08s; }
-  .intro-bars span:nth-child(3) { background: var(--green); animation-delay: 0.16s; }
-  .intro-bars span:nth-child(4) { background: var(--red); animation-delay: 0.24s; }
+  .intro-bars span:nth-child(1) { background: var(--purple); box-shadow: 0 0 18px rgba(194,75,153,0.7); animation-delay: 0s; }
+  .intro-bars span:nth-child(2) { background: var(--blue); box-shadow: 0 0 18px rgba(75,140,255,0.7); animation-delay: 0.09s; }
+  .intro-bars span:nth-child(3) { background: var(--green); box-shadow: 0 0 18px rgba(53,227,74,0.7); animation-delay: 0.18s; }
+  .intro-bars span:nth-child(4) { background: var(--red); box-shadow: 0 0 18px rgba(227,53,53,0.7); animation-delay: 0.27s; }
 
-  @keyframes introBarGrow {
-    0% { height: 0; opacity: 0; }
-    100% { height: 64px; opacity: 1; }
+  @keyframes introBarHit {
+    0% { height: 0; opacity: 0; transform: scaleY(0.4); }
+    55% { height: 70px; opacity: 1; transform: scaleY(1.15); }
+    75% { transform: scaleY(0.92); }
+    100% { height: 70px; opacity: 1; transform: scaleY(1); }
+  }
+
+  .intro-wordwrap {
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+    padding: 4px 0;
   }
 
   .intro-word {
     font-family: 'Rajdhani', sans-serif;
     font-weight: 700;
-    font-size: 56px;
-    letter-spacing: 0.08em;
+    font-size: 60px;
+    letter-spacing: 0.1em;
     opacity: 0;
-    transform: translateY(10px);
-    animation: introFadeUp 0.6s ease 0.5s forwards;
+    transform: translateX(-40px) skewX(-8deg);
+    animation: introWordSlide 0.65s cubic-bezier(.16,.9,.2,1.05) 0.55s forwards;
+  }
+
+  @keyframes introWordSlide {
+    to { opacity: 1; transform: translateX(0) skewX(0deg); }
+  }
+
+  .intro-underline {
+    height: 3px;
+    width: 0%;
+    margin: 6px auto 0;
+    background: linear-gradient(90deg, var(--purple), var(--blue), var(--green), var(--red));
+    animation: introUnderlineDraw 0.55s ease 0.95s forwards;
+  }
+
+  @keyframes introUnderlineDraw {
+    to { width: 100%; }
   }
 
   .intro-sub {
     font-family: 'JetBrains Mono', monospace;
     font-size: 13px;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.14em;
     color: var(--text-dim);
     text-transform: uppercase;
     opacity: 0;
-    animation: introFadeUp 0.6s ease 0.75s forwards;
+    position: relative;
+    z-index: 1;
+    animation: introFadeUp 0.6s ease 1.15s forwards;
+  }
+
+  .intro-skip {
+    position: absolute;
+    bottom: 36px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    opacity: 0;
+    z-index: 1;
+    animation: introFadeUp 0.6s ease 1.9s forwards, introPulseDim 1.8s ease-in-out 2.5s infinite;
   }
 
   @keyframes introFadeUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 0.6; transform: translateY(0); }
+  }
+
+  @keyframes introPulseDim {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.85; }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .intro-bars span, .intro-word, .intro-sub { animation: none; opacity: 1; height: 64px; transform: none; }
+    .intro-grid, .intro-scan { display: none; }
+    .intro-bars span { animation: none; height: 70px; opacity: 1; transform: none; }
+    .intro-word { animation: none; opacity: 1; transform: none; }
+    .intro-underline { animation: none; width: 100%; }
+    .intro-sub, .intro-skip { animation: none; opacity: 0.6; transform: none; }
   }
 
   .editor-export-bar {
     padding: 20px 48px 32px;
+  }
+
+  #charEditorCanvasWrap {
+    margin-top: 18px;
+    display: flex;
+    justify-content: center;
+    background:
+      linear-gradient(45deg, #2a2933 25%, transparent 25%),
+      linear-gradient(-45deg, #2a2933 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #2a2933 75%),
+      linear-gradient(-45deg, transparent 75%, #2a2933 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+  }
+
+  #charEditorCanvas {
+    max-width: 100%;
+    image-rendering: pixelated;
+  }
+
+  .editor-event-marker {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: var(--text-dim);
+    transform: rotate(45deg);
+    pointer-events: none;
+    border-radius: 2px;
   }
 
   .dir-nav {
@@ -419,9 +537,10 @@
     .output-actions { flex-wrap: wrap; }
     .output-actions button { width: 100%; }
 
-    .intro-word { font-size: 36px; }
-    .intro-bars { height: 44px; }
-    .intro-bars span { animation-name: introBarGrowMobile; }
+    .intro-word { font-size: 38px; }
+    .intro-bars { height: 46px; }
+    .intro-bars span { animation-name: introBarHitMobile; }
+    .intro-skip { bottom: 22px; }
 
     .editor-controls { padding: 20px 16px; }
     .editor-grid-wrap { margin: 16px; height: 480px; }
@@ -429,9 +548,11 @@
     .editor-export-bar button { margin-bottom: 8px; }
   }
 
-  @keyframes introBarGrowMobile {
-    0% { height: 0; opacity: 0; }
-    100% { height: 44px; opacity: 1; }
+  @keyframes introBarHitMobile {
+    0% { height: 0; opacity: 0; transform: scaleY(0.4); }
+    55% { height: 46px; opacity: 1; transform: scaleY(1.15); }
+    75% { transform: scaleY(0.92); }
+    100% { height: 46px; opacity: 1; transform: scaleY(1); }
   }
 
   .panel {
@@ -617,9 +738,15 @@
 <body>
 
 <div class="intro-overlay" id="introOverlay">
+  <div class="intro-grid"></div>
+  <div class="intro-scan"></div>
   <div class="intro-bars"><span></span><span></span><span></span><span></span></div>
-  <div class="intro-word">V STUFF</div>
+  <div class="intro-wordwrap">
+    <div class="intro-word">V STUFF</div>
+    <div class="intro-underline"></div>
+  </div>
   <div class="intro-sub">Psych &#8596; V-Slice</div>
+  <div class="intro-skip">Tap to skip</div>
 </div>
 
 
@@ -1216,11 +1343,18 @@
 </div>
 
 <div id="editorApp" style="display:none;">
+
+<nav class="app-nav" style="padding-left:48px;">
+  <button id="navEditorChart" class="active" type="button">Chart Editor</button>
+  <button id="navEditorCharacter" type="button">Character Editor</button>
+</nav>
+
+<div id="chartEditorSub">
 <main class="page active" style="display:block;">
   <section class="panel" style="grid-column: 1 / -1;">
     <div class="editor-controls">
       <h2>Chart Editor <span style="color:var(--text-dim); font-weight:500; font-size:14px;">— V-Slice format, notes only</span></h2>
-      <p class="sub">Drag on an empty lane to place a sustain note (a quick tap with no drag places a tap note instead). Drag an existing note to move it, drag its bottom edge to resize the sustain, tap it without moving (or hit the red × on its corner) to delete it. Works with touch on mobile — dragging on empty space still scrolls normally. Load audio to hear the song while editing — right-click the grid to seek. No undo yet, so keep a backup of your chart before big edits.</p>
+      <p class="sub">Drag on an empty lane to place a sustain note (a quick tap with no drag places a tap note instead). Drag an existing note to move it, drag its bottom edge to resize the sustain, tap it without moving (or hit the red × on its corner) to delete it. Works with touch on mobile — dragging on empty space still scrolls normally. Load audio to hear the song while editing — right-click the grid to seek. Ctrl+Z undoes the last change. Small gray diamonds on the right show events for reference (not editable here).</p>
 
       <label class="first">Chart JSON (V-Slice)</label>
       <div class="file-drop">
@@ -1233,6 +1367,7 @@
       <label class="first">Metadata JSON (optional, for BPM)</label>
       <div class="file-drop">
         <span id="editorMetaFileLabel">No file selected</span>
+
         <button id="editorMetaFileBtn" type="button">Upload .json</button>
         <input type="file" id="editorMetaFileInput" accept="application/json,.json">
       </div>
@@ -1288,6 +1423,9 @@
 
       <button id="editorNewBtn" type="button">New chart</button>
       <button id="editorLoadBtn" type="button">Load chart</button>
+      <button id="editorZoomOutBtn" type="button" title="Zoom out">−</button>
+      <button id="editorZoomInBtn" type="button" title="Zoom in">+</button>
+      <button id="editorUndoBtn" type="button" title="Ctrl+Z">Undo</button>
       <div id="editorStatus"></div>
     </div>
 
@@ -1304,6 +1442,71 @@
     </div>
   </section>
 </main>
+</div>
+
+<div id="characterEditorSub" style="display:none;">
+<main class="page active" style="display:block;">
+  <section class="panel" style="grid-column: 1 / -1;">
+    <div class="editor-controls">
+      <h2>Character Editor <span style="color:var(--text-dim); font-weight:500; font-size:14px;">— spritesheet preview + JSON editing</span></h2>
+      <p class="sub">Upload a spritesheet PNG plus its atlas (Sparrow XML or TexturePacker JSON) to preview animations frame by frame. Frames are grouped into animations by stripping the trailing frame number (e.g. "BF idle0000" → prefix "BF idle"). Edit the character.json on the right and use "Insert detected animations" to pull the atlas's prefixes straight in.</p>
+
+      <div class="field-row">
+        <div>
+          <label class="first">Spritesheet PNG</label>
+          <div class="file-drop">
+            <span id="charEditorPngLabel">No file selected</span>
+            <button id="charEditorPngBtn" type="button">Upload .png</button>
+            <input type="file" id="charEditorPngInput" accept="image/png">
+          </div>
+        </div>
+        <div>
+          <label class="first">Atlas (XML or JSON)</label>
+          <div class="file-drop">
+            <span id="charEditorAtlasLabel">No file selected</span>
+            <button id="charEditorAtlasBtn" type="button">Upload .xml/.json</button>
+            <input type="file" id="charEditorAtlasInput" accept=".xml,.json,application/json,text/xml">
+          </div>
+        </div>
+      </div>
+
+      <div id="charEditorCanvasWrap">
+        <canvas id="charEditorCanvas" width="360" height="360"></canvas>
+      </div>
+      <div id="charEditorFrameInfo" style="font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--text-dim); text-align:center; margin-top:8px;">No atlas loaded yet.</div>
+
+      <div class="field-row" style="margin-top:14px;">
+        <div>
+          <label class="first">Animation</label>
+          <select id="charEditorPrefixSelect"><option value="">—</option></select>
+        </div>
+        <div>
+          <label class="first">Frame rate</label>
+          <input type="text" id="charEditorFps" placeholder="24">
+        </div>
+      </div>
+
+      <div style="display:flex; gap:8px; margin-top:14px;">
+        <button id="charEditorPrevBtn" type="button">&#8592; Frame</button>
+        <button id="charEditorPlayBtn" type="button">Play</button>
+        <button id="charEditorNextBtn" type="button">Frame &#8594;</button>
+      </div>
+      <div id="charEditorStatus"></div>
+    </div>
+
+    <div style="padding: 0 48px 32px;">
+      <label class="first">character.json</label>
+      <textarea id="charEditorJsonInput" placeholder="{ &quot;version&quot;: &quot;1.0.0&quot;, &quot;name&quot;: &quot;&quot;, &quot;animations&quot;: [] }" spellcheck="false" style="height:260px;"></textarea>
+      <div class="output-actions" style="margin-top:10px;">
+        <button id="charEditorInsertAnimsBtn" type="button">Insert detected animations</button>
+        <button id="charEditorCopyBtn" type="button">Copy</button>
+        <button id="charEditorDownloadBtn" type="button">Download</button>
+      </div>
+    </div>
+  </section>
+</main>
+</div>
+
 </div>
 
 <script>
@@ -1728,6 +1931,248 @@ function toNumber(value, fallback) {
   var n = parseFloat(value);
   return isNaN(n) ? fallback : n;
 }
+
+function parseSparrowXML(xmlText) {
+  var parser = new DOMParser();
+  var doc = parser.parseFromString(xmlText, 'text/xml');
+  if (doc.getElementsByTagName('parsererror').length) throw new Error('invalid XML');
+  var subs = doc.getElementsByTagName('SubTexture');
+  var frames = [];
+
+  function readNum(el, attr, fallback) {
+    var raw = el.getAttribute(attr);
+    if (raw === null || raw === undefined || raw === '') return fallback;
+    var n = parseFloat(raw);
+    return isNaN(n) ? fallback : n;
+  }
+
+  for (var i = 0; i < subs.length; i++) {
+    var el = subs[i];
+    var name = el.getAttribute('name') || ('frame' + i);
+    var x = readNum(el, 'x', 0);
+    var y = readNum(el, 'y', 0);
+    var width = readNum(el, 'width', 0);
+    var height = readNum(el, 'height', 0);
+    var frameX = readNum(el, 'frameX', 0);
+    var frameY = readNum(el, 'frameY', 0);
+    var frameWidth = readNum(el, 'frameWidth', width);
+    var frameHeight = readNum(el, 'frameHeight', height);
+    frames.push({ name: name.replace(/\.[a-zA-Z0-9]+$/, ''), x: x, y: y, width: width, height: height, frameX: frameX, frameY: frameY, frameWidth: frameWidth, frameHeight: frameHeight });
+  }
+  return frames;
+}
+
+function parseTexturePackerJSON(jsonText) {
+  var data = JSON.parse(jsonText);
+  var framesRaw = data.frames;
+  if (!framesRaw) throw new Error('no "frames" key found');
+  var entries = Array.isArray(framesRaw)
+    ? framesRaw
+    : Object.keys(framesRaw).map(function (n) { var e = framesRaw[n]; e.filename = e.filename || n; return e; });
+  return entries.map(function (e) {
+    var name = (e.filename || '').replace(/\.[a-zA-Z0-9]+$/, '');
+    var f = e.frame || { x: 0, y: 0, w: 0, h: 0 };
+    var sss = e.spriteSourceSize || { x: 0, y: 0, w: f.w, h: f.h };
+    var ss = e.sourceSize || { w: f.w, h: f.h };
+    return {
+      name: name, x: f.x || 0, y: f.y || 0, width: f.w || 0, height: f.h || 0,
+      frameX: -(sss.x || 0), frameY: -(sss.y || 0), frameWidth: ss.w || f.w, frameHeight: ss.h || f.h
+    };
+  });
+}
+
+function groupFramesByPrefix(frames) {
+  var groups = {};
+  frames.forEach(function (f) {
+    var m = f.name.match(/^(.*?)(\d+)$/);
+    var prefix = m ? m[1] : f.name;
+    var num = m ? parseInt(m[2], 10) : 0;
+    if (!groups[prefix]) groups[prefix] = [];
+    groups[prefix].push({ frame: f, num: num });
+  });
+  var result = {};
+  Object.keys(groups).forEach(function (p) {
+    groups[p].sort(function (a, b) { return a.num - b.num; });
+    result[p] = groups[p].map(function (g) { return g.frame; });
+  });
+  return result;
+}
+
+var charEditorImage = new Image();
+var charEditorFrames = [];
+var charEditorGroups = {};
+var charEditorCurrentPrefix = null;
+var charEditorCurrentFrameIdx = 0;
+var charEditorPlaying = false;
+var charEditorLastFrameTime = 0;
+var charEditorFPS = 24;
+
+function setCharEditorStatus(text, kind) {
+  var el = document.getElementById('charEditorStatus');
+  el.textContent = text;
+  el.className = kind || '';
+}
+
+function renderCharEditorFrame() {
+  var canvas = document.getElementById('charEditorCanvas');
+  var ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (!charEditorCurrentPrefix || !charEditorImage.complete || !charEditorImage.naturalWidth) {
+    document.getElementById('charEditorFrameInfo').textContent = 'No atlas loaded yet.';
+    return;
+  }
+  var frames = charEditorGroups[charEditorCurrentPrefix];
+  if (!frames || !frames.length) return;
+  charEditorCurrentFrameIdx = ((charEditorCurrentFrameIdx % frames.length) + frames.length) % frames.length;
+  var f = frames[charEditorCurrentFrameIdx];
+  var scale = Math.min(canvas.width / f.frameWidth, canvas.height / f.frameHeight, 4);
+  if (!isFinite(scale) || scale <= 0) scale = 1;
+  var offsetX = (canvas.width - f.frameWidth * scale) / 2;
+  var offsetY = (canvas.height - f.frameHeight * scale) / 2;
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(
+    charEditorImage,
+    f.x, f.y, f.width, f.height,
+    offsetX + (-f.frameX) * scale, offsetY + (-f.frameY) * scale, f.width * scale, f.height * scale
+  );
+  document.getElementById('charEditorFrameInfo').textContent = charEditorCurrentPrefix + ' — frame ' + (charEditorCurrentFrameIdx + 1) + '/' + frames.length + ' (' + f.name + ')';
+}
+
+function charEditorTick(timestamp) {
+  if (!charEditorPlaying) return;
+  if (!charEditorLastFrameTime) charEditorLastFrameTime = timestamp;
+  var interval = 1000 / Math.max(1, charEditorFPS);
+  if (timestamp - charEditorLastFrameTime >= interval) {
+    charEditorCurrentFrameIdx++;
+    charEditorLastFrameTime = timestamp;
+    renderCharEditorFrame();
+  }
+  requestAnimationFrame(charEditorTick);
+}
+
+document.getElementById('charEditorPngBtn').addEventListener('click', function () {
+  document.getElementById('charEditorPngInput').click();
+});
+document.getElementById('charEditorPngInput').addEventListener('change', function (e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('charEditorPngLabel').textContent = file.name;
+  charEditorImage = new Image();
+  charEditorImage.onload = function () { renderCharEditorFrame(); };
+  charEditorImage.onerror = function () { setCharEditorStatus('Could not load that image.', 'err'); };
+  charEditorImage.src = URL.createObjectURL(file);
+});
+
+document.getElementById('charEditorAtlasBtn').addEventListener('click', function () {
+  document.getElementById('charEditorAtlasInput').click();
+});
+document.getElementById('charEditorAtlasInput').addEventListener('change', function (e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('charEditorAtlasLabel').textContent = file.name;
+  var reader = new FileReader();
+  reader.onload = function (ev) {
+    var text = ev.target.result;
+    try {
+      var isXml = /^\s*</.test(text) || /\.xml$/i.test(file.name);
+      charEditorFrames = isXml ? parseSparrowXML(text) : parseTexturePackerJSON(text);
+      charEditorGroups = groupFramesByPrefix(charEditorFrames);
+      var prefixes = Object.keys(charEditorGroups);
+      var select = document.getElementById('charEditorPrefixSelect');
+      select.innerHTML = '';
+      prefixes.forEach(function (p) {
+        var opt = document.createElement('option');
+        opt.value = p;
+        opt.textContent = p + ' (' + charEditorGroups[p].length + ')';
+        select.appendChild(opt);
+      });
+      charEditorCurrentPrefix = prefixes[0] || null;
+      charEditorCurrentFrameIdx = 0;
+      if (charEditorCurrentPrefix) select.value = charEditorCurrentPrefix;
+      renderCharEditorFrame();
+      setCharEditorStatus('Found ' + prefixes.length + ' animation(s), ' + charEditorFrames.length + ' frame(s) total.', 'ok');
+    } catch (err) {
+      setCharEditorStatus('Could not parse atlas: ' + err.message, 'err');
+    }
+  };
+  reader.readAsText(file);
+});
+
+document.getElementById('charEditorPrefixSelect').addEventListener('change', function () {
+  charEditorCurrentPrefix = this.value;
+  charEditorCurrentFrameIdx = 0;
+  renderCharEditorFrame();
+});
+
+document.getElementById('charEditorFps').addEventListener('input', function () {
+  charEditorFPS = toNumber(this.value, 24);
+});
+
+document.getElementById('charEditorPrevBtn').addEventListener('click', function () {
+  if (!charEditorCurrentPrefix) return;
+  charEditorCurrentFrameIdx--;
+  renderCharEditorFrame();
+});
+document.getElementById('charEditorNextBtn').addEventListener('click', function () {
+  if (!charEditorCurrentPrefix) return;
+  charEditorCurrentFrameIdx++;
+  renderCharEditorFrame();
+});
+
+document.getElementById('charEditorPlayBtn').addEventListener('click', function () {
+  charEditorPlaying = !charEditorPlaying;
+  this.textContent = charEditorPlaying ? 'Pause' : 'Play';
+  if (charEditorPlaying) {
+    charEditorLastFrameTime = 0;
+    requestAnimationFrame(charEditorTick);
+  }
+});
+
+document.getElementById('charEditorInsertAnimsBtn').addEventListener('click', function () {
+  var raw = document.getElementById('charEditorJsonInput').value.trim();
+  var obj;
+  try {
+    obj = raw ? JSON.parse(raw) : { version: '1.0.0', name: '', renderType: 'multianimateatlas', assetPath: '', scale: 1, singTime: 4, flipX: false, offsets: [0, 0], cameraOffsets: [0, 0], animations: [] };
+  } catch (err) {
+    setCharEditorStatus('Current JSON doesn\'t parse, fix it first: ' + err.message, 'err');
+    return;
+  }
+  if (!Array.isArray(obj.animations)) obj.animations = [];
+  var existingPrefixes = obj.animations.map(function (a) { return a.prefix; });
+  var added = 0;
+  Object.keys(charEditorGroups).forEach(function (p) {
+    if (existingPrefixes.indexOf(p) === -1) {
+      obj.animations.push({ name: p, prefix: p, frameRate: 24 });
+      added++;
+    }
+  });
+  document.getElementById('charEditorJsonInput').value = JSON.stringify(obj, null, 2);
+  setCharEditorStatus('Added ' + added + ' new animation(s) from the atlas.', added ? 'ok' : '');
+});
+
+document.getElementById('charEditorCopyBtn').addEventListener('click', function () {
+  var text = document.getElementById('charEditorJsonInput').value;
+  if (!text) return;
+  var temp = document.createElement('textarea');
+  temp.value = text;
+  document.body.appendChild(temp);
+  temp.select();
+  document.execCommand('copy');
+  document.body.removeChild(temp);
+  setCharEditorStatus('Copied to clipboard.', 'ok');
+});
+
+document.getElementById('charEditorDownloadBtn').addEventListener('click', function () {
+  var text = document.getElementById('charEditorJsonInput').value;
+  if (!text) return;
+  var blob = new Blob([text], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'character.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
 
 function convertPsychCharacter(psychJson, meta) {
   var anims = psychJson.animations || [];
@@ -2826,6 +3271,20 @@ document.getElementById('navAppEditor').addEventListener('click', function () {
   document.getElementById('generatorApp').style.display = 'none';
 });
 
+document.getElementById('navEditorChart').addEventListener('click', function () {
+  document.getElementById('navEditorChart').classList.add('active');
+  document.getElementById('navEditorCharacter').classList.remove('active');
+  document.getElementById('chartEditorSub').style.display = '';
+  document.getElementById('characterEditorSub').style.display = 'none';
+});
+
+document.getElementById('navEditorCharacter').addEventListener('click', function () {
+  document.getElementById('navEditorCharacter').classList.add('active');
+  document.getElementById('navEditorChart').classList.remove('active');
+  document.getElementById('characterEditorSub').style.display = '';
+  document.getElementById('chartEditorSub').style.display = 'none';
+});
+
 var editorChart = null;
 var editorNotes = [];
 var editorBpmValue = 100;
@@ -2975,6 +3434,19 @@ document.getElementById('editorDifficulty').addEventListener('change', function 
   renderEditorGrid();
 });
 
+function editorSetZoom(newPxPerBeat) {
+  newPxPerBeat = Math.max(20, Math.min(300, newPxPerBeat));
+  var wrap = document.getElementById('editorGridWrap');
+  var centerBeat = (wrap.scrollTop + wrap.clientHeight / 2) / editorPxPerBeat;
+  editorPxPerBeat = newPxPerBeat;
+  document.getElementById('editorZoom').value = String(newPxPerBeat);
+  if (editorChart) renderEditorGrid();
+  wrap.scrollTop = centerBeat * newPxPerBeat - wrap.clientHeight / 2;
+}
+
+document.getElementById('editorZoomInBtn').addEventListener('click', function () { editorSetZoom(editorPxPerBeat + 20); });
+document.getElementById('editorZoomOutBtn').addEventListener('click', function () { editorSetZoom(editorPxPerBeat - 20); });
+
 function renderEditorGrid() {
   var wrap = document.getElementById('editorGridInner');
   wrap.innerHTML = '';
@@ -2983,6 +3455,10 @@ function renderEditorGrid() {
   editorNotes.forEach(function (n) {
     var end = n.t + (n.l || 0);
     if (end > maxTime) maxTime = end;
+  });
+  var editorEvents = (editorChart && Array.isArray(editorChart.events)) ? editorChart.events : [];
+  editorEvents.forEach(function (ev) {
+    if (ev.t > maxTime) maxTime = ev.t;
   });
   var audioEl = document.getElementById('editorAudioEl');
   if (audioEl && audioEl.duration) {
@@ -2993,7 +3469,7 @@ function renderEditorGrid() {
   var msPerBeat = editorMsPerBeat();
   var totalBeats = Math.ceil(maxTime / msPerBeat) + 16;
   var totalHeight = totalBeats * editorPxPerBeat;
-  var totalWidth = editorColWidth * editorNumLanes;
+  var totalWidth = editorColWidth * editorNumLanes + (editorEvents.length ? 26 : 0);
 
   wrap.style.height = totalHeight + 'px';
   wrap.style.width = totalWidth + 'px';
@@ -3050,7 +3526,17 @@ function renderEditorGrid() {
   playhead.id = 'editorPlayheadLine';
   wrap.appendChild(playhead);
 
-  document.getElementById('editorNoteCount').textContent = editorNotes.length + ' notes';
+  var eventColX = editorColWidth * editorNumLanes + 8;
+  editorEvents.forEach(function (ev) {
+    var marker = document.createElement('div');
+    marker.className = 'editor-event-marker';
+    marker.style.top = (editorTimeToY(ev.t) - 5) + 'px';
+    marker.style.left = eventColX + 'px';
+    marker.title = ev.e + ' @ ' + Math.round(ev.t) + 'ms';
+    wrap.appendChild(marker);
+  });
+
+  document.getElementById('editorNoteCount').textContent = editorNotes.length + ' notes' + (editorEvents.length ? ', ' + editorEvents.length + ' events' : '');
   updateEditorPlayhead();
 }
 
@@ -3081,6 +3567,31 @@ function editorPointFromEvent(ev) {
 }
 
 var editorDrag = null;
+var editorUndoStack = [];
+
+function editorPushUndo() {
+  editorUndoStack.push(JSON.stringify(editorNotes));
+  if (editorUndoStack.length > 50) editorUndoStack.shift();
+}
+
+function editorUndo() {
+  if (!editorChart || !editorUndoStack.length) return;
+  var prev = JSON.parse(editorUndoStack.pop());
+  editorNotes.length = 0;
+  Array.prototype.push.apply(editorNotes, prev);
+  renderEditorGrid();
+}
+
+document.getElementById('editorUndoBtn').addEventListener('click', editorUndo);
+
+document.addEventListener('keydown', function (ev) {
+  if (!(ev.ctrlKey || ev.metaKey) || ev.key.toLowerCase() !== 'z' || ev.shiftKey) return;
+  var active = document.activeElement;
+  if (active && (active.tagName === 'TEXTAREA' || active.tagName === 'INPUT')) return;
+  ev.preventDefault();
+  editorUndo();
+});
+
 var editorTouchPending = null;
 var EDITOR_DRAG_PX_THRESHOLD = 5;
 
@@ -3130,6 +3641,7 @@ function editorFinalizeDrag() {
 
 function editorGridStart(clientX, clientY, target) {
   if (!editorChart) return;
+  editorPushUndo();
   var wrap = document.getElementById('editorGridInner');
   var local = editorClientToLocal(clientX, clientY, wrap);
   var delBtn = target.classList && target.classList.contains('editor-note-delete') ? target : null;
@@ -3794,7 +4306,7 @@ document.getElementById('weekDownloadBtn').addEventListener('click', function ()
   }
 
   overlay.addEventListener('click', dismissIntro);
-  setTimeout(dismissIntro, 2600);
+  setTimeout(dismissIntro, 3400);
 })();
 </script>
 
