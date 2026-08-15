@@ -6,7 +6,7 @@
 <title>V Stuff — Psych to V-Slice Converter</title>
 
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#121118">
+<meta name="theme-color" content="#0e0d15" id="themeColorMeta">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -21,16 +21,33 @@
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #121118;
-    --surface: #1a1823;
-    --surface-2: #221f2e;
-    --border: #322e40;
-    --text: #ece9f5;
-    --text-dim: #9d97b2;
-    --purple: #c24b99;
-    --blue: #12b3ff;
-    --green: #35e34a;
-    --red: #ff4d5e;
+    --bg: #0e0d15;
+    --surface: #181621;
+    --surface-2: #211e2c;
+    --border: #322e42;
+    --text: #f1eef9;
+    --text-dim: #a29cb8;
+    --purple: #e94cd1;
+    --blue: #22c3ff;
+    --green: #2fe88f;
+    --red: #ff5470;
+  }
+
+  :root[data-theme="light"] {
+    --bg: #f6f5fb;
+    --surface: #ffffff;
+    --surface-2: #f0edf8;
+    --border: #e1dced;
+    --text: #1b1726;
+    --text-dim: #6b6480;
+    --purple: #c026d3;
+    --blue: #0284c7;
+    --green: #16a34a;
+    --red: #e11d48;
+  }
+
+  body, .panel, .options-panel, .notes-info, .editor-controls, textarea, input, select, .online-card, .app-nav, .dir-nav, .page-nav {
+    transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
   }
 
   * { box-sizing: border-box; }
@@ -115,6 +132,28 @@
   }
 
   .options-radio input { accent-color: var(--green); cursor: pointer; }
+
+  .theme-toggle-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .theme-toggle-btn {
+    flex: 1;
+    font-size: 19px;
+    padding: 9px;
+    line-height: 1;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    opacity: 0.5;
+  }
+
+  .theme-toggle-btn.active {
+    opacity: 1;
+    border-color: var(--blue);
+    box-shadow: 0 0 0 1px var(--blue) inset, 0 0 16px rgba(34,195,255,0.35);
+  }
 
   .options-divider {
     height: 1px;
@@ -224,6 +263,13 @@
     border-bottom-color: var(--green);
   }
 
+  .app-nav button:hover {
+    color: var(--text);
+    transform: none;
+    box-shadow: none;
+    border-color: transparent;
+  }
+
   .online-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -321,7 +367,7 @@
     overflow-x: hidden;
     height: 620px;
     position: relative;
-    background: var(--surface);
+    background: #181621;
     -webkit-overflow-scrolling: touch;
   }
 
@@ -425,7 +471,7 @@
   .intro-overlay {
     position: fixed;
     inset: 0;
-    background: var(--bg);
+    background: #0e0d15;
     z-index: 1000;
     display: flex;
     flex-direction: column;
@@ -671,6 +717,12 @@
     color: var(--bg);
     border-color: transparent;
     background: linear-gradient(90deg, var(--purple), var(--blue), var(--green), var(--red));
+    box-shadow: 0 6px 20px rgba(233,76,209,0.28), 0 6px 20px rgba(34,195,255,0.2);
+  }
+
+  .dir-nav button:not(.active):hover {
+    color: var(--text);
+    background: var(--surface-2);
   }
 
   .page-nav {
@@ -857,11 +909,25 @@
     color: var(--text);
     padding: 8px 14px;
     font-size: 14px;
-    transition: transform 0.08s ease, border-color 0.15s ease;
+    transition: transform 0.18s cubic-bezier(.34,1.56,.64,1), border-color 0.15s ease, box-shadow 0.2s ease, background-color 0.15s ease, color 0.15s ease;
   }
 
-  button:hover { border-color: var(--text-dim); }
-  button:active { transform: scale(0.97); }
+  button:hover {
+    border-color: var(--text-dim);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.22);
+  }
+
+  button:active {
+    transform: scale(0.96) translateY(0);
+    box-shadow: none;
+    transition-duration: 0.08s;
+  }
+
+  button:focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 2px;
+  }
 
   #convertBtn {
     width: 100%;
@@ -873,11 +939,15 @@
     background-position: 0% 0%;
     border: none;
     color: #0c0b12;
-    transition: background-position 0.4s ease, transform 0.08s ease;
+    transition: background-position 0.4s ease, transform 0.18s cubic-bezier(.34,1.56,.64,1), box-shadow 0.2s ease;
   }
 
-  #convertBtn:hover { background-position: 100% 0%; }
-  #convertBtn:active { transform: scale(0.985); }
+  #convertBtn:hover {
+    background-position: 100% 0%;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 26px rgba(233,76,209,0.3), 0 8px 26px rgba(34,195,255,0.22);
+  }
+  #convertBtn:active { transform: scale(0.985) translateY(0); transition-duration: 0.08s; }
 
   .tabs {
     display: flex;
@@ -962,6 +1032,14 @@
 <header>
   <button id="optionsGearBtn" class="options-gear" type="button" title="Options" aria-label="Options">&#9881;</button>
   <div id="optionsPanel" class="options-panel" style="display:none;">
+    <div class="options-panel-title" data-i18n="optionsTheme">Theme</div>
+    <div class="theme-toggle-row">
+      <button id="themeSunBtn" class="theme-toggle-btn" type="button" title="Light mode" aria-label="Light mode">&#9728;&#65039;</button>
+      <button id="themeMoonBtn" class="theme-toggle-btn active" type="button" title="Dark mode" aria-label="Dark mode">&#127769;</button>
+    </div>
+
+    <div class="options-divider"></div>
+
     <div class="options-panel-title" data-i18n="optionsLanguage">Language</div>
     <label class="options-radio"><input type="radio" name="lang" value="en" checked> <span data-i18n="optionsEnglish">English</span></label>
     <label class="options-radio"><input type="radio" name="lang" value="pt"> <span data-i18n="optionsPortuguese">Portuguese</span></label>
@@ -2443,7 +2521,7 @@ function guessDisplayName(image) {
 
 var I18N = {
   en: {
-    optionsLanguage: 'Language', optionsEnglish: 'English', optionsPortuguese: 'Portuguese',
+    optionsTheme: 'Theme', optionsLanguage: 'Language', optionsEnglish: 'English', optionsPortuguese: 'Portuguese',
     headerDesc: "Converts a Psych Engine chart into the V-Slice chart and metadata format. Paste or upload a chart, fill in what Psych doesn't store, and get both output files.",
     installApp: 'Install app',
     navGenerator: 'Generator', navEditor: 'Editor', navOnline: 'Online',
@@ -2456,7 +2534,7 @@ var I18N = {
     optionsAccount: 'Account (optional)', optionsGoogleUnconfigured: "Google sign-in isn't set up on this deployment yet.", optionsSignOut: 'Sign out'
   },
   pt: {
-    optionsLanguage: 'Idioma', optionsEnglish: 'Inglês', optionsPortuguese: 'Português',
+    optionsTheme: 'Tema', optionsLanguage: 'Idioma', optionsEnglish: 'Inglês', optionsPortuguese: 'Português',
     headerDesc: 'Converte um chart do Psych Engine para o formato de chart e metadata do V-Slice. Cole ou envie um chart, preencha o que o Psych não guarda, e baixe os dois arquivos.',
     installApp: 'Instalar app',
     navGenerator: 'Gerador', navEditor: 'Editor', navOnline: 'Online',
@@ -2469,6 +2547,31 @@ var I18N = {
     optionsAccount: 'Conta (opcional)', optionsGoogleUnconfigured: 'O login com Google ainda não foi configurado neste site.', optionsSignOut: 'Sair'
   }
 };
+
+var currentTheme = 'dark';
+try {
+  var storedTheme = localStorage.getItem('vstuffTheme');
+  if (storedTheme === 'light' || storedTheme === 'dark') currentTheme = storedTheme;
+} catch (err) {}
+
+function applyTheme() {
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  document.getElementById('themeSunBtn').classList.toggle('active', currentTheme === 'light');
+  document.getElementById('themeMoonBtn').classList.toggle('active', currentTheme === 'dark');
+  var themeMeta = document.getElementById('themeColorMeta');
+  if (themeMeta) themeMeta.setAttribute('content', currentTheme === 'light' ? '#f6f5fb' : '#0e0d15');
+}
+
+function setTheme(theme) {
+  currentTheme = theme;
+  try { localStorage.setItem('vstuffTheme', currentTheme); } catch (err) {}
+  applyTheme();
+}
+
+document.getElementById('themeSunBtn').addEventListener('click', function () { setTheme('light'); });
+document.getElementById('themeMoonBtn').addEventListener('click', function () { setTheme('dark'); });
+
+applyTheme();
 
 var currentLang = 'en';
 try {
