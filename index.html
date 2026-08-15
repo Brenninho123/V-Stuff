@@ -1113,6 +1113,7 @@
         </div>
       </div>
 
+      <button id="editorNewBtn" type="button">New chart</button>
       <button id="editorLoadBtn" type="button">Load chart</button>
       <div id="editorStatus"></div>
     </div>
@@ -2711,10 +2712,50 @@ document.getElementById('editorMetaFileInput').addEventListener('change', functi
   reader.readAsText(file);
 });
 
+function resolveEditorBpm() {
+  var rawMeta = document.getElementById('editorMetaInput').value.trim();
+  var bpmField = toNumber(document.getElementById('editorBpm').value, null);
+  if (rawMeta) {
+    try {
+      var parsedMeta = JSON.parse(rawMeta);
+      if (parsedMeta.timeChanges && parsedMeta.timeChanges.length) {
+        return parsedMeta.timeChanges[0].bpm || 100;
+      }
+    } catch (err) {
+      return bpmField || 100;
+    }
+  }
+  return bpmField || 100;
+}
+
+function applyEditorGridSettings() {
+  editorBpmValue = resolveEditorBpm();
+  editorSnapValue = toNumber(document.getElementById('editorSnap').value, 16);
+  editorPxPerBeat = toNumber(document.getElementById('editorZoom').value, 80);
+}
+
+document.getElementById('editorNewBtn').addEventListener('click', function () {
+  applyEditorGridSettings();
+
+  editorChart = {
+    version: '2.0.0',
+    scrollSpeed: { easy: 1, normal: 1, hard: 1 },
+    events: [],
+    notes: { easy: [], normal: [], hard: [] },
+    generatedBy: 'V Stuff'
+  };
+
+  var diff = document.getElementById('editorDifficulty').value;
+  editorNotes = editorChart.notes[diff];
+
+  setEditorStatus('Started a blank chart on ' + diff + ' at ' + editorBpmValue + ' BPM. Drag on the grid to add notes.', 'ok');
+  renderEditorGrid();
+});
+
 document.getElementById('editorLoadBtn').addEventListener('click', function () {
   var rawChart = document.getElementById('editorChartInput').value.trim();
   if (!rawChart) {
-    setEditorStatus('Paste or upload a V-Slice chart first.', 'err');
+    setEditorStatus('Paste or upload a V-Slice chart first — or use "New chart" to start from scratch.', 'err');
     return;
   }
 
@@ -2727,27 +2768,16 @@ document.getElementById('editorLoadBtn').addEventListener('click', function () {
   }
 
   var rawMeta = document.getElementById('editorMetaInput').value.trim();
-  var parsedMeta = null;
   if (rawMeta) {
     try {
-      parsedMeta = JSON.parse(rawMeta);
+      JSON.parse(rawMeta);
     } catch (err) {
       setEditorStatus('Metadata JSON doesn\'t parse: ' + err.message, 'err');
       return;
     }
   }
 
-  var bpmField = toNumber(document.getElementById('editorBpm').value, null);
-  if (parsedMeta && parsedMeta.timeChanges && parsedMeta.timeChanges.length) {
-    editorBpmValue = parsedMeta.timeChanges[0].bpm || 100;
-  } else if (bpmField) {
-    editorBpmValue = bpmField;
-  } else {
-    editorBpmValue = 100;
-  }
-
-  editorSnapValue = toNumber(document.getElementById('editorSnap').value, 16);
-  editorPxPerBeat = toNumber(document.getElementById('editorZoom').value, 80);
+  applyEditorGridSettings();
 
   editorChart = parsedChart;
   if (!editorChart.notes) editorChart.notes = {};
