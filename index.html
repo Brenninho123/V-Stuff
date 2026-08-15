@@ -116,6 +116,46 @@
 
   .options-radio input { accent-color: var(--green); cursor: pointer; }
 
+  .options-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 12px 0;
+  }
+
+  .options-hint {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.4;
+    max-width: 200px;
+  }
+
+  .options-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .options-profile-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--bg);
+    flex-shrink: 0;
+  }
+
+  .options-profile-name {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .options-signout {
+    font-size: 12px;
+    padding: 6px 10px;
+    width: 100%;
+  }
+
   .eyebrow {
     font-family: 'JetBrains Mono', monospace;
     font-size: 12px;
@@ -890,6 +930,21 @@
     <div class="options-panel-title" data-i18n="optionsLanguage">Language</div>
     <label class="options-radio"><input type="radio" name="lang" value="en" checked> <span data-i18n="optionsEnglish">English</span></label>
     <label class="options-radio"><input type="radio" name="lang" value="pt"> <span data-i18n="optionsPortuguese">Portuguese</span></label>
+
+    <div class="options-divider"></div>
+
+    <div class="options-panel-title" data-i18n="optionsAccount">Account (optional)</div>
+    <div id="googleSignedOutView">
+      <div id="googleSignInContainer"></div>
+      <div id="googleSignInUnconfigured" class="options-hint" style="display:none;" data-i18n="optionsGoogleUnconfigured">Google sign-in isn't set up on this deployment yet.</div>
+    </div>
+    <div id="googleSignedInView" style="display:none;">
+      <div class="options-profile">
+        <img id="googleProfileAvatar" class="options-profile-avatar" src="" alt="">
+        <span id="googleProfileName" class="options-profile-name"></span>
+      </div>
+      <button id="googleSignOutBtn" class="options-signout" type="button" data-i18n="optionsSignOut">Sign out</button>
+    </div>
   </div>
 
   <div class="eyebrow">V Stuff</div>
@@ -1747,6 +1802,8 @@
 </div>
 
 <script src="network.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="login.js"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function () {
@@ -2176,7 +2233,8 @@ var I18N = {
     introSkip: 'Tap to skip',
     onlineTitle: 'Community Showcase',
     onlineDesc: 'Posts here are public GitHub issues on this project\'s repo, tagged "showcase" — there\'s no separate database, so anyone can read them and anyone with a GitHub account can post one. Hit Submit to open a pre-filled issue on GitHub, fill it in, and it\'ll show up here once it\'s posted.',
-    onlineSubmit: 'Submit your project', onlineRefresh: 'Refresh', onlineLoading: 'Loading projects…'
+    onlineSubmit: 'Submit your project', onlineRefresh: 'Refresh', onlineLoading: 'Loading projects…',
+    optionsAccount: 'Account (optional)', optionsGoogleUnconfigured: "Google sign-in isn't set up on this deployment yet.", optionsSignOut: 'Sign out'
   },
   pt: {
     optionsLanguage: 'Idioma', optionsEnglish: 'Inglês', optionsPortuguese: 'Português',
@@ -2188,7 +2246,8 @@ var I18N = {
     introSkip: 'Toque para pular',
     onlineTitle: 'Vitrine da Comunidade',
     onlineDesc: 'Os posts aqui são issues públicas no repositório do projeto no GitHub, marcadas com "showcase" — não tem banco de dados separado, então qualquer um pode ler e qualquer um com conta no GitHub pode postar. Clique em Enviar pra abrir uma issue pré-preenchida no GitHub, preencha, e ela aparece aqui depois de postada.',
-    onlineSubmit: 'Envie seu projeto', onlineRefresh: 'Atualizar', onlineLoading: 'Carregando projetos…'
+    onlineSubmit: 'Envie seu projeto', onlineRefresh: 'Atualizar', onlineLoading: 'Carregando projetos…',
+    optionsAccount: 'Conta (opcional)', optionsGoogleUnconfigured: 'O login com Google ainda não foi configurado neste site.', optionsSignOut: 'Sair'
   }
 };
 
