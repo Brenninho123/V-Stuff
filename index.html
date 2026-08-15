@@ -184,6 +184,77 @@
     border-bottom-color: var(--green);
   }
 
+  .online-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    padding: 24px 48px 40px;
+  }
+
+  .online-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-decoration: none;
+    color: var(--text);
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+
+  .online-card:hover { border-color: var(--green); transform: translateY(-2px); }
+
+  .online-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .online-card-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--bg);
+    flex-shrink: 0;
+  }
+
+  .online-card-author {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .online-card-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    line-height: 1.25;
+  }
+
+  .online-card-body {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+  }
+
+  .online-card-date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: auto;
+    padding-top: 6px;
+  }
+
+  @media (max-width: 900px) {
+    .online-grid { grid-template-columns: 1fr; padding: 16px; }
+  }
+
   .editor-controls {
     padding: 28px 48px;
     border-bottom: 1px solid var(--border);
@@ -830,6 +901,7 @@
 <nav class="app-nav">
   <button id="navAppGenerator" class="active" type="button" data-i18n="navGenerator">Generator</button>
   <button id="navAppEditor" type="button" data-i18n="navEditor">Editor</button>
+  <button id="navAppOnline" type="button" data-i18n="navOnline">Online</button>
 </nav>
 
 <div id="generatorApp">
@@ -1653,6 +1725,28 @@
 
 </div>
 
+<div id="onlineApp" style="display:none;">
+<main class="page active" style="display:block;">
+  <section class="panel" style="grid-column: 1 / -1;">
+    <div class="editor-controls">
+      <h2 data-i18n="onlineTitle">Community Showcase</h2>
+      <p class="sub" data-i18n="onlineDesc">Posts here are public GitHub issues on this project's repo, tagged "showcase" — there's no separate database, so anyone can read them and anyone with a GitHub account can post one. Hit Submit to open a pre-filled issue on GitHub, fill it in, and it'll show up here once it's posted.</p>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+        <button id="onlineSubmitBtn" type="button" data-i18n="onlineSubmit">Submit your project</button>
+        <button id="onlineRefreshBtn" type="button" data-i18n="onlineRefresh">Refresh</button>
+        <span id="onlineStatus"></span>
+      </div>
+    </div>
+
+    <div id="onlineGrid" class="online-grid">
+      <div class="empty-state" data-i18n="onlineLoading">Loading projects…</div>
+    </div>
+  </section>
+</main>
+</div>
+
+<script src="network.js"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function () {
@@ -2076,19 +2170,25 @@ var I18N = {
     optionsLanguage: 'Language', optionsEnglish: 'English', optionsPortuguese: 'Portuguese',
     headerDesc: "Converts a Psych Engine chart into the V-Slice chart and metadata format. Paste or upload a chart, fill in what Psych doesn't store, and get both output files.",
     installApp: 'Install app',
-    navGenerator: 'Generator', navEditor: 'Editor',
+    navGenerator: 'Generator', navEditor: 'Editor', navOnline: 'Online',
     navCharts: 'Charts', navCharacters: 'Characters', navStages: 'Stages', navModFolder: 'Mod Folder', navWeeks: 'Weeks',
     navEditorChart: 'Chart Editor', navEditorCharacter: 'Character Editor', navEditorStage: 'Stage Editor',
-    introSkip: 'Tap to skip'
+    introSkip: 'Tap to skip',
+    onlineTitle: 'Community Showcase',
+    onlineDesc: 'Posts here are public GitHub issues on this project\'s repo, tagged "showcase" — there\'s no separate database, so anyone can read them and anyone with a GitHub account can post one. Hit Submit to open a pre-filled issue on GitHub, fill it in, and it\'ll show up here once it\'s posted.',
+    onlineSubmit: 'Submit your project', onlineRefresh: 'Refresh', onlineLoading: 'Loading projects…'
   },
   pt: {
     optionsLanguage: 'Idioma', optionsEnglish: 'Inglês', optionsPortuguese: 'Português',
     headerDesc: 'Converte um chart do Psych Engine para o formato de chart e metadata do V-Slice. Cole ou envie um chart, preencha o que o Psych não guarda, e baixe os dois arquivos.',
     installApp: 'Instalar app',
-    navGenerator: 'Gerador', navEditor: 'Editor',
+    navGenerator: 'Gerador', navEditor: 'Editor', navOnline: 'Online',
     navCharts: 'Charts', navCharacters: 'Personagens', navStages: 'Stages', navModFolder: 'Pasta do Mod', navWeeks: 'Weeks',
     navEditorChart: 'Editor de Chart', navEditorCharacter: 'Editor de Personagem', navEditorStage: 'Editor de Stage',
-    introSkip: 'Toque para pular'
+    introSkip: 'Toque para pular',
+    onlineTitle: 'Vitrine da Comunidade',
+    onlineDesc: 'Os posts aqui são issues públicas no repositório do projeto no GitHub, marcadas com "showcase" — não tem banco de dados separado, então qualquer um pode ler e qualquer um com conta no GitHub pode postar. Clique em Enviar pra abrir uma issue pré-preenchida no GitHub, preencha, e ela aparece aqui depois de postada.',
+    onlineSubmit: 'Envie seu projeto', onlineRefresh: 'Atualizar', onlineLoading: 'Carregando projetos…'
   }
 };
 
@@ -3656,19 +3756,24 @@ document.getElementById('stageRDownloadBtn').addEventListener('click', function 
   URL.revokeObjectURL(url);
 });
 
-document.getElementById('navAppGenerator').addEventListener('click', function () {
-  document.getElementById('navAppGenerator').classList.add('active');
-  document.getElementById('navAppEditor').classList.remove('active');
-  document.getElementById('generatorApp').style.display = '';
-  document.getElementById('editorApp').style.display = 'none';
-});
+var APP_TABS = ['navAppGenerator', 'navAppEditor', 'navAppOnline'];
+var APP_PAGES = ['generatorApp', 'editorApp', 'onlineApp'];
+var onlineLoadedOnce = false;
 
-document.getElementById('navAppEditor').addEventListener('click', function () {
-  document.getElementById('navAppEditor').classList.add('active');
-  document.getElementById('navAppGenerator').classList.remove('active');
-  document.getElementById('editorApp').style.display = '';
-  document.getElementById('generatorApp').style.display = 'none';
-});
+function showAppTab(index) {
+  for (var i = 0; i < APP_TABS.length; i++) {
+    document.getElementById(APP_TABS[i]).classList.toggle('active', i === index);
+    document.getElementById(APP_PAGES[i]).style.display = i === index ? '' : 'none';
+  }
+  if (index === 2 && !onlineLoadedOnce) {
+    onlineLoadedOnce = true;
+    if (typeof loadCommunityProjects === 'function') loadCommunityProjects();
+  }
+}
+
+document.getElementById('navAppGenerator').addEventListener('click', function () { showAppTab(0); });
+document.getElementById('navAppEditor').addEventListener('click', function () { showAppTab(1); });
+document.getElementById('navAppOnline').addEventListener('click', function () { showAppTab(2); });
 
 var EDITOR_SUBTABS = ['navEditorChart', 'navEditorCharacter', 'navEditorStage'];
 var EDITOR_SUBPAGES = ['chartEditorSub', 'characterEditorSub', 'stageEditorSub'];
