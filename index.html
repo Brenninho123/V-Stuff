@@ -56,7 +56,65 @@
   header {
     padding: 40px 48px 28px;
     border-bottom: 1px solid var(--border);
+    position: relative;
   }
+
+  .options-gear {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 17px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.4s ease, border-color 0.15s ease, color 0.15s ease;
+    z-index: 20;
+  }
+
+  .options-gear:hover { color: var(--text); border-color: var(--text-dim); transform: rotate(35deg); }
+
+  .options-panel {
+    position: absolute;
+    top: 68px;
+    right: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    min-width: 160px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+    z-index: 21;
+  }
+
+  .options-panel-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+
+  .options-radio {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 6px 0;
+    cursor: pointer;
+    color: var(--text);
+  }
+
+  .options-radio input { accent-color: var(--green); cursor: pointer; }
 
   .eyebrow {
     font-family: 'JetBrains Mono', monospace;
@@ -411,7 +469,7 @@
     padding: 20px 48px 32px;
   }
 
-  #charEditorCanvasWrap {
+  #charEditorCanvasWrap, .char-canvas-wrap {
     margin-top: 18px;
     display: flex;
     justify-content: center;
@@ -428,7 +486,7 @@
     padding: 12px;
   }
 
-  #charEditorCanvas {
+  #charEditorCanvas, #stageEditorCanvas {
     max-width: 100%;
     image-rendering: pixelated;
   }
@@ -517,6 +575,9 @@
     .page.active { grid-template-columns: 1fr; }
 
     header { padding: 24px 20px 20px; }
+    .options-gear { top: 16px; right: 16px; width: 34px; height: 34px; font-size: 15px; }
+    .options-panel { top: 56px; right: 16px; }
+    h1 { padding-right: 40px; }
     h1 { font-size: 30px; }
     h1 .arrow { margin: 0 4px; }
     header p { max-width: 100%; }
@@ -746,22 +807,29 @@
     <div class="intro-underline"></div>
   </div>
   <div class="intro-sub">Psych &#8596; V-Slice</div>
-  <div class="intro-skip">Tap to skip</div>
+  <div class="intro-skip" data-i18n="introSkip">Tap to skip</div>
 </div>
 
 
 <div class="lanes"><span class="l0"></span><span class="l1"></span><span class="l2"></span><span class="l3"></span></div>
 
 <header>
+  <button id="optionsGearBtn" class="options-gear" type="button" title="Options" aria-label="Options">&#9881;</button>
+  <div id="optionsPanel" class="options-panel" style="display:none;">
+    <div class="options-panel-title" data-i18n="optionsLanguage">Language</div>
+    <label class="options-radio"><input type="radio" name="lang" value="en" checked> <span data-i18n="optionsEnglish">English</span></label>
+    <label class="options-radio"><input type="radio" name="lang" value="pt"> <span data-i18n="optionsPortuguese">Portuguese</span></label>
+  </div>
+
   <div class="eyebrow">V Stuff</div>
   <h1>Psych <span class="arrow">&#8594;</span> V-Slice</h1>
-  <p>Converts a Psych Engine chart into the V-Slice chart and metadata format. Paste or upload a chart, fill in what Psych doesn't store, and get both output files.</p>
-  <button id="installBtn" type="button"><span class="dot"></span>Install app</button>
+  <p data-i18n="headerDesc">Converts a Psych Engine chart into the V-Slice chart and metadata format. Paste or upload a chart, fill in what Psych doesn't store, and get both output files.</p>
+  <button id="installBtn" type="button"><span class="dot"></span><span data-i18n="installApp">Install app</span></button>
 </header>
 
 <nav class="app-nav">
-  <button id="navAppGenerator" class="active" type="button">Generator</button>
-  <button id="navAppEditor" type="button">Editor</button>
+  <button id="navAppGenerator" class="active" type="button" data-i18n="navGenerator">Generator</button>
+  <button id="navAppEditor" type="button" data-i18n="navEditor">Editor</button>
 </nav>
 
 <div id="generatorApp">
@@ -772,11 +840,11 @@
 </nav>
 
 <nav class="page-nav">
-  <button id="navCharts" class="active" type="button"><span class="dot"></span>Charts</button>
-  <button id="navCharacters" type="button"><span class="dot"></span>Characters</button>
-  <button id="navStages" type="button"><span class="dot"></span>Stages</button>
-  <button id="navModFolder" type="button"><span class="dot"></span>Mod Folder</button>
-  <button id="navWeeks" type="button"><span class="dot"></span>Weeks</button>
+  <button id="navCharts" class="active" type="button"><span class="dot"></span><span data-i18n="navCharts">Charts</span></button>
+  <button id="navCharacters" type="button"><span class="dot"></span><span data-i18n="navCharacters">Characters</span></button>
+  <button id="navStages" type="button"><span class="dot"></span><span data-i18n="navStages">Stages</span></button>
+  <button id="navModFolder" type="button"><span class="dot"></span><span data-i18n="navModFolder">Mod Folder</span></button>
+  <button id="navWeeks" type="button"><span class="dot"></span><span data-i18n="navWeeks">Weeks</span></button>
 </nav>
 
 <main id="chartsPage" class="page active">
@@ -1345,8 +1413,9 @@
 <div id="editorApp" style="display:none;">
 
 <nav class="app-nav" style="padding-left:48px;">
-  <button id="navEditorChart" class="active" type="button">Chart Editor</button>
-  <button id="navEditorCharacter" type="button">Character Editor</button>
+  <button id="navEditorChart" class="active" type="button" data-i18n="navEditorChart">Chart Editor</button>
+  <button id="navEditorCharacter" type="button" data-i18n="navEditorCharacter">Character Editor</button>
+  <button id="navEditorStage" type="button" data-i18n="navEditorStage">Stage Editor</button>
 </nav>
 
 <div id="chartEditorSub">
@@ -1501,6 +1570,81 @@
         <button id="charEditorInsertAnimsBtn" type="button">Insert detected animations</button>
         <button id="charEditorCopyBtn" type="button">Copy</button>
         <button id="charEditorDownloadBtn" type="button">Download</button>
+      </div>
+    </div>
+  </section>
+</main>
+</div>
+
+<div id="stageEditorSub" style="display:none;">
+<main class="page active" style="display:block;">
+  <section class="panel" style="grid-column: 1 / -1;">
+    <div class="editor-controls">
+      <h2>Stage Editor <span style="color:var(--text-dim); font-weight:500; font-size:14px;">— spritesheet preview + JSON editing</span></h2>
+      <p class="sub">Same idea as the Character Editor, but for stage props: upload a prop's spritesheet PNG plus its atlas (Sparrow XML or TexturePacker JSON) to preview it, then insert the detected animations straight into a prop inside your stage.json.</p>
+
+      <div class="field-row">
+        <div>
+          <label class="first">Prop spritesheet PNG</label>
+          <div class="file-drop">
+            <span id="stageEditorPngLabel">No file selected</span>
+            <button id="stageEditorPngBtn" type="button">Upload .png</button>
+            <input type="file" id="stageEditorPngInput" accept="image/png">
+          </div>
+        </div>
+        <div>
+          <label class="first">Atlas (XML or JSON)</label>
+          <div class="file-drop">
+            <span id="stageEditorAtlasLabel">No file selected</span>
+            <button id="stageEditorAtlasBtn" type="button">Upload .xml/.json</button>
+            <input type="file" id="stageEditorAtlasInput" accept=".xml,.json,application/json,text/xml">
+          </div>
+        </div>
+      </div>
+
+      <div id="stageEditorCanvasWrap" class="char-canvas-wrap">
+        <canvas id="stageEditorCanvas" width="360" height="360"></canvas>
+      </div>
+      <div id="stageEditorFrameInfo" style="font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--text-dim); text-align:center; margin-top:8px;">No atlas loaded yet.</div>
+
+      <div class="field-row" style="margin-top:14px;">
+        <div>
+          <label class="first">Animation</label>
+          <select id="stageEditorPrefixSelect"><option value="">—</option></select>
+        </div>
+        <div>
+          <label class="first">Frame rate</label>
+          <input type="text" id="stageEditorFps" placeholder="24">
+        </div>
+      </div>
+
+      <div style="display:flex; gap:8px; margin-top:14px;">
+        <button id="stageEditorPrevBtn" type="button">&#8592; Frame</button>
+        <button id="stageEditorPlayBtn" type="button">Play</button>
+        <button id="stageEditorNextBtn" type="button">Frame &#8594;</button>
+      </div>
+      <div id="stageEditorStatus"></div>
+    </div>
+
+    <div style="padding: 0 48px 32px;">
+      <label class="first">stage.json</label>
+      <textarea id="stageEditorJsonInput" placeholder="{ &quot;version&quot;: &quot;1.0.0&quot;, &quot;props&quot;: [], &quot;characters&quot;: {} }" spellcheck="false" style="height:220px;"></textarea>
+
+      <div class="field-row" style="margin-top:10px;">
+        <div>
+          <label class="first">Prop name in stage.json</label>
+          <input type="text" id="stageEditorPropName" placeholder="e.g. bgBack">
+        </div>
+        <div>
+          <label class="first">Asset path (for new props)</label>
+          <input type="text" id="stageEditorAssetPath" placeholder="stages/mainStage/bgBack">
+        </div>
+      </div>
+
+      <div class="output-actions" style="margin-top:10px;">
+        <button id="stageEditorInsertAnimsBtn" type="button">Insert detected animations into prop</button>
+        <button id="stageEditorCopyBtn" type="button">Copy</button>
+        <button id="stageEditorDownloadBtn" type="button">Download</button>
       </div>
     </div>
   </section>
@@ -1927,6 +2071,69 @@ function guessDisplayName(image) {
   return words.join(' ');
 }
 
+var I18N = {
+  en: {
+    optionsLanguage: 'Language', optionsEnglish: 'English', optionsPortuguese: 'Portuguese',
+    headerDesc: "Converts a Psych Engine chart into the V-Slice chart and metadata format. Paste or upload a chart, fill in what Psych doesn't store, and get both output files.",
+    installApp: 'Install app',
+    navGenerator: 'Generator', navEditor: 'Editor',
+    navCharts: 'Charts', navCharacters: 'Characters', navStages: 'Stages', navModFolder: 'Mod Folder', navWeeks: 'Weeks',
+    navEditorChart: 'Chart Editor', navEditorCharacter: 'Character Editor', navEditorStage: 'Stage Editor',
+    introSkip: 'Tap to skip'
+  },
+  pt: {
+    optionsLanguage: 'Idioma', optionsEnglish: 'Inglês', optionsPortuguese: 'Português',
+    headerDesc: 'Converte um chart do Psych Engine para o formato de chart e metadata do V-Slice. Cole ou envie um chart, preencha o que o Psych não guarda, e baixe os dois arquivos.',
+    installApp: 'Instalar app',
+    navGenerator: 'Gerador', navEditor: 'Editor',
+    navCharts: 'Charts', navCharacters: 'Personagens', navStages: 'Stages', navModFolder: 'Pasta do Mod', navWeeks: 'Weeks',
+    navEditorChart: 'Editor de Chart', navEditorCharacter: 'Editor de Personagem', navEditorStage: 'Editor de Stage',
+    introSkip: 'Toque para pular'
+  }
+};
+
+var currentLang = 'en';
+try {
+  var storedLang = localStorage.getItem('vstuffLang');
+  if (storedLang && I18N[storedLang]) currentLang = storedLang;
+} catch (err) {}
+
+function applyTranslations() {
+  var dict = I18N[currentLang] || I18N.en;
+  var nodes = document.querySelectorAll('[data-i18n]');
+  for (var i = 0; i < nodes.length; i++) {
+    var key = nodes[i].getAttribute('data-i18n');
+    if (dict[key] !== undefined) nodes[i].textContent = dict[key];
+  }
+  document.documentElement.lang = currentLang;
+}
+
+document.getElementById('optionsGearBtn').addEventListener('click', function (ev) {
+  ev.stopPropagation();
+  var panel = document.getElementById('optionsPanel');
+  panel.style.display = panel.style.display === 'none' ? '' : 'none';
+});
+
+document.addEventListener('click', function (ev) {
+  var panel = document.getElementById('optionsPanel');
+  if (panel.style.display === 'none') return;
+  if (ev.target === panel || panel.contains(ev.target) || ev.target === document.getElementById('optionsGearBtn')) return;
+  panel.style.display = 'none';
+});
+
+var langRadios = document.querySelectorAll('input[name="lang"]');
+for (var lr = 0; lr < langRadios.length; lr++) {
+  langRadios[lr].checked = langRadios[lr].value === currentLang;
+  langRadios[lr].addEventListener('change', function () {
+    if (!this.checked) return;
+    currentLang = this.value;
+    try { localStorage.setItem('vstuffLang', currentLang); } catch (err) {}
+    applyTranslations();
+  });
+}
+
+applyTranslations();
+
 function toNumber(value, fallback) {
   var n = parseFloat(value);
   return isNaN(n) ? fallback : n;
@@ -2170,6 +2377,198 @@ document.getElementById('charEditorDownloadBtn').addEventListener('click', funct
   var a = document.createElement('a');
   a.href = url;
   a.download = 'character.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+var stageEditorImage = new Image();
+var stageEditorFrames = [];
+var stageEditorGroups = {};
+var stageEditorCurrentPrefix = null;
+var stageEditorCurrentFrameIdx = 0;
+var stageEditorPlaying = false;
+var stageEditorLastFrameTime = 0;
+var stageEditorFPS = 24;
+
+function setStageEditorStatus(text, kind) {
+  var el = document.getElementById('stageEditorStatus');
+  el.textContent = text;
+  el.className = kind || '';
+}
+
+function renderStageEditorFrame() {
+  var canvas = document.getElementById('stageEditorCanvas');
+  var ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (!stageEditorCurrentPrefix || !stageEditorImage.complete || !stageEditorImage.naturalWidth) {
+    document.getElementById('stageEditorFrameInfo').textContent = 'No atlas loaded yet.';
+    return;
+  }
+  var frames = stageEditorGroups[stageEditorCurrentPrefix];
+  if (!frames || !frames.length) return;
+  stageEditorCurrentFrameIdx = ((stageEditorCurrentFrameIdx % frames.length) + frames.length) % frames.length;
+  var f = frames[stageEditorCurrentFrameIdx];
+  var scale = Math.min(canvas.width / f.frameWidth, canvas.height / f.frameHeight, 4);
+  if (!isFinite(scale) || scale <= 0) scale = 1;
+  var offsetX = (canvas.width - f.frameWidth * scale) / 2;
+  var offsetY = (canvas.height - f.frameHeight * scale) / 2;
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(
+    stageEditorImage,
+    f.x, f.y, f.width, f.height,
+    offsetX + (-f.frameX) * scale, offsetY + (-f.frameY) * scale, f.width * scale, f.height * scale
+  );
+  document.getElementById('stageEditorFrameInfo').textContent = stageEditorCurrentPrefix + ' — frame ' + (stageEditorCurrentFrameIdx + 1) + '/' + frames.length + ' (' + f.name + ')';
+}
+
+function stageEditorTick(timestamp) {
+  if (!stageEditorPlaying) return;
+  if (!stageEditorLastFrameTime) stageEditorLastFrameTime = timestamp;
+  var interval = 1000 / Math.max(1, stageEditorFPS);
+  if (timestamp - stageEditorLastFrameTime >= interval) {
+    stageEditorCurrentFrameIdx++;
+    stageEditorLastFrameTime = timestamp;
+    renderStageEditorFrame();
+  }
+  requestAnimationFrame(stageEditorTick);
+}
+
+document.getElementById('stageEditorPngBtn').addEventListener('click', function () {
+  document.getElementById('stageEditorPngInput').click();
+});
+document.getElementById('stageEditorPngInput').addEventListener('change', function (e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('stageEditorPngLabel').textContent = file.name;
+  stageEditorImage = new Image();
+  stageEditorImage.onload = function () { renderStageEditorFrame(); };
+  stageEditorImage.onerror = function () { setStageEditorStatus('Could not load that image.', 'err'); };
+  stageEditorImage.src = URL.createObjectURL(file);
+});
+
+document.getElementById('stageEditorAtlasBtn').addEventListener('click', function () {
+  document.getElementById('stageEditorAtlasInput').click();
+});
+document.getElementById('stageEditorAtlasInput').addEventListener('change', function (e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('stageEditorAtlasLabel').textContent = file.name;
+  var reader = new FileReader();
+  reader.onload = function (ev) {
+    var text = ev.target.result;
+    try {
+      var isXml = /^\s*</.test(text) || /\.xml$/i.test(file.name);
+      stageEditorFrames = isXml ? parseSparrowXML(text) : parseTexturePackerJSON(text);
+      stageEditorGroups = groupFramesByPrefix(stageEditorFrames);
+      var prefixes = Object.keys(stageEditorGroups);
+      var select = document.getElementById('stageEditorPrefixSelect');
+      select.innerHTML = '';
+      prefixes.forEach(function (p) {
+        var opt = document.createElement('option');
+        opt.value = p;
+        opt.textContent = p + ' (' + stageEditorGroups[p].length + ')';
+        select.appendChild(opt);
+      });
+      stageEditorCurrentPrefix = prefixes[0] || null;
+      stageEditorCurrentFrameIdx = 0;
+      if (stageEditorCurrentPrefix) select.value = stageEditorCurrentPrefix;
+      renderStageEditorFrame();
+      setStageEditorStatus('Found ' + prefixes.length + ' animation(s), ' + stageEditorFrames.length + ' frame(s) total.', 'ok');
+    } catch (err) {
+      setStageEditorStatus('Could not parse atlas: ' + err.message, 'err');
+    }
+  };
+  reader.readAsText(file);
+});
+
+document.getElementById('stageEditorPrefixSelect').addEventListener('change', function () {
+  stageEditorCurrentPrefix = this.value;
+  stageEditorCurrentFrameIdx = 0;
+  renderStageEditorFrame();
+});
+
+document.getElementById('stageEditorFps').addEventListener('input', function () {
+  stageEditorFPS = toNumber(this.value, 24);
+});
+
+document.getElementById('stageEditorPrevBtn').addEventListener('click', function () {
+  if (!stageEditorCurrentPrefix) return;
+  stageEditorCurrentFrameIdx--;
+  renderStageEditorFrame();
+});
+document.getElementById('stageEditorNextBtn').addEventListener('click', function () {
+  if (!stageEditorCurrentPrefix) return;
+  stageEditorCurrentFrameIdx++;
+  renderStageEditorFrame();
+});
+
+document.getElementById('stageEditorPlayBtn').addEventListener('click', function () {
+  stageEditorPlaying = !stageEditorPlaying;
+  this.textContent = stageEditorPlaying ? 'Pause' : 'Play';
+  if (stageEditorPlaying) {
+    stageEditorLastFrameTime = 0;
+    requestAnimationFrame(stageEditorTick);
+  }
+});
+
+document.getElementById('stageEditorInsertAnimsBtn').addEventListener('click', function () {
+  var raw = document.getElementById('stageEditorJsonInput').value.trim();
+  var obj;
+  try {
+    obj = raw ? JSON.parse(raw) : { version: '1.0.0', name: '', props: [], characters: {}, cameraZoom: 1, directory: 'shared' };
+  } catch (err) {
+    setStageEditorStatus('Current JSON doesn\'t parse, fix it first: ' + err.message, 'err');
+    return;
+  }
+  if (!Array.isArray(obj.props)) obj.props = [];
+
+  var propName = document.getElementById('stageEditorPropName').value.trim();
+  if (!propName) {
+    setStageEditorStatus('Give the prop a name first.', 'err');
+    return;
+  }
+
+  var prop = obj.props.find(function (p) { return p.name === propName; });
+  if (!prop) {
+    var assetPath = document.getElementById('stageEditorAssetPath').value.trim();
+    prop = { name: propName, assetPath: assetPath || propName, position: [0, 0], animations: [] };
+    obj.props.push(prop);
+  }
+  if (!Array.isArray(prop.animations)) prop.animations = [];
+
+  var existingPrefixes = prop.animations.map(function (a) { return a.prefix; });
+  var added = 0;
+  Object.keys(stageEditorGroups).forEach(function (p) {
+    if (existingPrefixes.indexOf(p) === -1) {
+      prop.animations.push({ name: p, prefix: p, frameRate: 24 });
+      added++;
+    }
+  });
+
+  document.getElementById('stageEditorJsonInput').value = JSON.stringify(obj, null, 2);
+  setStageEditorStatus('Added ' + added + ' new animation(s) to prop "' + propName + '".', added ? 'ok' : '');
+});
+
+document.getElementById('stageEditorCopyBtn').addEventListener('click', function () {
+  var text = document.getElementById('stageEditorJsonInput').value;
+  if (!text) return;
+  var temp = document.createElement('textarea');
+  temp.value = text;
+  document.body.appendChild(temp);
+  temp.select();
+  document.execCommand('copy');
+  document.body.removeChild(temp);
+  setStageEditorStatus('Copied to clipboard.', 'ok');
+});
+
+document.getElementById('stageEditorDownloadBtn').addEventListener('click', function () {
+  var text = document.getElementById('stageEditorJsonInput').value;
+  if (!text) return;
+  var blob = new Blob([text], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'stage.json';
   a.click();
   URL.revokeObjectURL(url);
 });
@@ -3271,19 +3670,19 @@ document.getElementById('navAppEditor').addEventListener('click', function () {
   document.getElementById('generatorApp').style.display = 'none';
 });
 
-document.getElementById('navEditorChart').addEventListener('click', function () {
-  document.getElementById('navEditorChart').classList.add('active');
-  document.getElementById('navEditorCharacter').classList.remove('active');
-  document.getElementById('chartEditorSub').style.display = '';
-  document.getElementById('characterEditorSub').style.display = 'none';
-});
+var EDITOR_SUBTABS = ['navEditorChart', 'navEditorCharacter', 'navEditorStage'];
+var EDITOR_SUBPAGES = ['chartEditorSub', 'characterEditorSub', 'stageEditorSub'];
 
-document.getElementById('navEditorCharacter').addEventListener('click', function () {
-  document.getElementById('navEditorCharacter').classList.add('active');
-  document.getElementById('navEditorChart').classList.remove('active');
-  document.getElementById('characterEditorSub').style.display = '';
-  document.getElementById('chartEditorSub').style.display = 'none';
-});
+function showEditorSubtab(index) {
+  for (var i = 0; i < EDITOR_SUBTABS.length; i++) {
+    document.getElementById(EDITOR_SUBTABS[i]).classList.toggle('active', i === index);
+    document.getElementById(EDITOR_SUBPAGES[i]).style.display = i === index ? '' : 'none';
+  }
+}
+
+document.getElementById('navEditorChart').addEventListener('click', function () { showEditorSubtab(0); });
+document.getElementById('navEditorCharacter').addEventListener('click', function () { showEditorSubtab(1); });
+document.getElementById('navEditorStage').addEventListener('click', function () { showEditorSubtab(2); });
 
 var editorChart = null;
 var editorNotes = [];
