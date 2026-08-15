@@ -581,6 +581,7 @@
   #status.ok { color: var(--green); }
   #status.err { color: var(--red); }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
 
@@ -616,6 +617,7 @@
   <button id="navCharts" class="active" type="button"><span class="dot"></span>Charts</button>
   <button id="navCharacters" type="button"><span class="dot"></span>Characters</button>
   <button id="navStages" type="button"><span class="dot"></span>Stages</button>
+  <button id="navModFolder" type="button"><span class="dot"></span>Mod Folder</button>
 </nav>
 
 <main id="chartsPage" class="page active">
@@ -711,7 +713,8 @@
 
     <div class="notes-info">
       <strong>Event mapping</strong> — Play Animation and Add Camera Zoom convert directly; the target character becomes V-Slice's role name (<code>opponent</code>/<code>player</code>/<code>girlfriend</code> — confirmed against a real V-Slice chart, not just guessed). Flash Camera / flash become FlashCamera. Anything else (Philly Glow, Cinematics, custom stage events) passes through with its original name under <code>v.p1</code> / <code>v.p2</code> so nothing is silently dropped — check the console list after converting and wire those up in your engine fork as needed.<br><br>
-      <strong>Metadata</strong> — alt charter, sprite artist, cutscene artist, and sticker pack are real fields in V-Slice metadata (confirmed against an actual file) but Psych has nowhere to store them, so fill them in on the left if you want them in the output — they're left out entirely when blank rather than written as empty strings.
+      <strong>Metadata</strong> — alt charter, sprite artist, cutscene artist, and sticker pack are real fields in V-Slice metadata (confirmed against an actual file) but Psych has nowhere to store them, so fill them in on the left if you want them in the output — they're left out entirely when blank rather than written as empty strings.<br><br>
+      <strong>Section length</strong> — some Psych charts store each section's length as <code>lengthInSteps</code> (16 = a standard 4-beat section) instead of <code>sectionBeats</code>; both are read correctly.
     </div>
   </section>
 </main>
@@ -878,6 +881,41 @@
       <strong>Field mapping</strong> — <code>defaultZoom</code> becomes <code>cameraZoom</code>, and <code>boyfriend</code>/<code>opponent</code>/<code>girlfriend</code> positions plus their <code>camera_*</code> offsets go into <code>characters.bf</code>/<code>dad</code>/<code>gf</code>. If <code>hide_girlfriend</code> is true, the <code>gf</code> entry is left out entirely. Character <code>zIndex</code> isn't stored by Psych, so it's set from the fields on the left (default 300/200/100, matching official stage layering).<br><br>
       <strong>Props from Lua</strong> — <code>makeLuaSprite</code>/<code>makeAnimatedLuaSprite</code> give name, asset path and position; <code>addAnimationByPrefix</code> fills in <code>animations</code> and sets <code>startingAnimation</code> to whichever one gets added first; <code>addAnimationByIndices</code> is picked up the same way but stores its frame list as <code>frameIndices</code>; <code>setScrollFactor</code> fills <code>scroll</code>; <code>addLuaSprite('x', true)</code> (the foreground flag) pushes <code>zIndex</code> above the characters, otherwise props stack below them in call order. <code>atlasSettings</code> is always <code>null</code> and per-animation <code>flipX</code>/<code>flipY</code> default to <code>false</code> since Lua doesn't expose either. This is regex parsing, not a Lua interpreter — loops, variables used as sprite names, and anything built programmatically won't be picked up, so check the result against the script.<br><br>
       <strong>Not carried over</strong> — <code>camera_speed</code> isn't part of the stage schema, it belongs in the song's metadata.json as <code>cameraSpeed</code> (see the Charts tab). Shaders, tweened event animations (like a custom spotlight event), and anything in <code>onEvent</code>/<code>onTimerCompleted</code> are code, not static stage data — you'll need to reimplement that logic directly in your target engine.
+    </div>
+  </section>
+</main>
+
+<main id="modFolderPage" class="page">
+  <section class="panel">
+    <h2><span class="tag from">FROM</span> Psych Engine</h2>
+    <p class="sub">Upload a whole mod folder as a .zip. Runs the Charts/Characters/Stages converters above across every matching file automatically, copies audio and character/stage art into V-Slice's layout, and gives you a report of what needs manual attention.</p>
+
+    <label class="first">Mod folder .zip</label>
+    <div class="file-drop">
+      <span id="modZipFileLabel">No file selected</span>
+      <button id="modZipFileBtn" type="button">Upload .zip</button>
+      <input type="file" id="modZipFileInput" accept=".zip,application/zip">
+    </div>
+
+    <button id="modConvertBtn" type="button">Convert mod folder</button>
+    <div id="modStatus"></div>
+  </section>
+
+  <section class="panel">
+    <h2><span class="tag to">TO</span> V-Slice</h2>
+    <p class="sub">A ready-to-drop-in Polymod folder, zipped.</p>
+
+    <div id="modOutputWrap">
+      <div class="empty-state">Convert a mod folder to see the report here.</div>
+    </div>
+
+    <div class="output-actions" id="modOutputActions" style="display:none;">
+      <button id="modDownloadBtn" type="button">Download converted-mod.zip</button>
+    </div>
+
+    <div class="notes-info">
+      <strong>Converted automatically</strong> — <code>characters/*.json</code> → <code>data/characters/</code>, <code>stages/&lt;name&gt;.json</code> + matching <code>.lua</code> → <code>data/stages/</code>, each <code>data/&lt;songId&gt;/&lt;songId&gt;.json</code> (+ a sibling <code>events.json</code> if present, merged in) + <code>meta.txt</code> → <code>data/songs/&lt;songId&gt;/&lt;songId&gt;-chart.json</code> and <code>-metadata.json</code>. <code>songs/&lt;songId&gt;/*.ogg</code>, <code>images/characters/*</code>, and top-level <code>images/icons/*.png</code> are copied straight across (V-Slice uses the same layout for these — confirmed against a real mod). Other <code>images/&lt;folder&gt;/*</code> subfolders are copied to <code>shared/images/stages/&lt;folder&gt;/</code> as a best guess, skipping known UI-only folders. A basic <code>_polymod_meta.json</code> is generated from the zip's folder name — edit the description, version, and contributors by hand.<br><br>
+      <strong>Not converted — needs manual work</strong> — <code>weeks/*.json</code> (V-Slice's <code>data/levels/</code> format needs story-menu character props and a title asset Psych doesn't have; the report lists each week's song order as a reference), <code>custom_events/*</code>, dialogue <code>.txt</code> files, per-song <code>.lua</code> scripts beyond stages (<code>events.lua</code>, <code>script.lua</code> — these are code, not data), <code>notestyles</code>, menu music/SFX, and Psych-specific config (<code>characterList.txt</code>, <code>stageList.txt</code>, <code>weekList.txt</code>, <code>freeplayColors.txt</code>, <code>introText.txt</code>, <code>specialThanks.txt</code>, <code>main-view.xml</code>). All of it is listed in the report so nothing just silently disappears.
     </div>
   </section>
 </main>
@@ -1068,6 +1106,13 @@
       <strong>Field mapping</strong> — <code>cameraZoom</code> becomes <code>defaultZoom</code>, each character's <code>position</code>/<code>cameraOffsets</code> go back into <code>boyfriend</code>/<code>opponent</code>/<code>girlfriend</code> and <code>camera_*</code>. <code>hide_girlfriend</code> is set to true if there's no <code>gf</code> entry at all, or if it's present with <code>alpha: 0</code> — both show up in real stages.<br><br>
       <strong>Lua generation</strong> — props are sorted by <code>zIndex</code> (props missing it fall back to their position in the <code>props</code> array, since that's valid too) and turned into <code>makeLuaSprite</code>/<code>makeAnimatedLuaSprite</code> + <code>addAnimationByPrefix</code> (or <code>addAnimationByIndices</code> when an animation has <code>frameIndices</code>) + <code>setScrollFactor</code> + <code>addLuaSprite</code>, with the foreground flag set for any prop whose zIndex is above the highest character zIndex. A <code>startingAnimation</code> becomes an <code>objectPlayAnimation</code> call right after the sprite is built. <code>scale</code> works whether it's a single number or an <code>[x,y]</code> pair, but either way it can't be reproduced in Lua (Psych's <code>setGraphicSize</code> needs the sprite's real pixel dimensions, which isn't in the JSON) — flagged props are listed after converting. <code>animType</code> other than "sparrow" is generated the same way regardless, since Psych only understands sparrow atlases and single images — double check those manually. <code>danceEvery</code>, <code>atlasSettings</code>, blend modes, and any <code>lowQuality</code> gating aren't reconstructed since Psych stores none of that in the stage JSON either.
     </div>
+  </section>
+</main>
+
+<main id="modFolderPageR" class="page">
+  <section class="panel" style="grid-column: 1 / -1;">
+    <h2>Mod Folder <span style="color:var(--text-dim); font-weight:500; font-size:14px;">— V-Slice → Psych</span></h2>
+    <p class="sub">Not built yet — the whole-folder converter only goes Psych → V-Slice for now. Use the Charts/Characters/Stages tabs above one file at a time for the reverse direction.</p>
   </section>
 </main>
 
@@ -1318,7 +1363,7 @@ function convertNotesAndTimeChanges(song) {
       notesOut.push(outNote);
     }
 
-    var beats = section.sectionBeats || 4;
+    var beats = section.sectionBeats !== undefined ? section.sectionBeats : (section.lengthInSteps !== undefined ? section.lengthInSteps / 4 : 4);
     var msPerBeat = 60000 / sectionBpm;
     sectionStartTime += beats * msPerBeat;
     runningBeat += beats;
@@ -1520,8 +1565,8 @@ document.getElementById('downloadBtn').addEventListener('click', function () {
 });
 
 var DIR_PAGES = {
-  forward: ['chartsPage', 'charactersPage', 'stagesPage'],
-  reverse: ['chartsPageR', 'charactersPageR', 'stagesPageR']
+  forward: ['chartsPage', 'charactersPage', 'stagesPage', 'modFolderPage'],
+  reverse: ['chartsPageR', 'charactersPageR', 'stagesPageR', 'modFolderPageR']
 };
 var currentDir = 'forward';
 var currentTool = 0;
@@ -1537,6 +1582,7 @@ function showPage() {
   document.getElementById('navCharts').classList.toggle('active', currentTool === 0);
   document.getElementById('navCharacters').classList.toggle('active', currentTool === 1);
   document.getElementById('navStages').classList.toggle('active', currentTool === 2);
+  document.getElementById('navModFolder').classList.toggle('active', currentTool === 3);
 
   document.getElementById('navDirForward').classList.toggle('active', currentDir === 'forward');
   document.getElementById('navDirReverse').classList.toggle('active', currentDir === 'reverse');
@@ -1547,6 +1593,7 @@ document.getElementById('navDirReverse').addEventListener('click', function () {
 document.getElementById('navCharts').addEventListener('click', function () { currentTool = 0; showPage(); });
 document.getElementById('navCharacters').addEventListener('click', function () { currentTool = 1; showPage(); });
 document.getElementById('navStages').addEventListener('click', function () { currentTool = 2; showPage(); });
+document.getElementById('navModFolder').addEventListener('click', function () { currentTool = 3; showPage(); });
 
 var lastCharResult = null;
 
@@ -3182,6 +3229,306 @@ document.getElementById('editorDownloadBtn').addEventListener('click', function 
   var a = document.createElement('a');
   a.href = url;
   a.download = 'chart.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+function parseModMetaTxt(text) {
+  var lines = text.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(function (l) { return l.length; });
+  var songName = lines[0] || '';
+  var artist = '';
+  for (var i = 1; i < lines.length; i++) {
+    var m = lines[i].match(/^Artist:\s*(.*)$/i);
+    if (m) { artist = m[1].trim(); break; }
+  }
+  return { songName: songName, artist: artist };
+}
+
+function modChartMeta(songName, artist) {
+  return { songName: songName || '', artist: artist || '', charter: '', album: '', stage: '', noteStyle: '', altCharter: '', spriteArtist: '', cutsceneArtist: '', stickerPack: '' };
+}
+
+var MOD_DEFAULT_CHAR_META = { name: '', renderType: '', assetPath: '', offsetX: 0, offsetY: 0, cameraOffsetX: null, cameraOffsetY: null, deathCameraOffsetX: null, deathCameraOffsetY: null };
+var MOD_DEFAULT_STAGE_META = { name: '', isPixel: 'auto', bfZ: 300, dadZ: 200, gfZ: 100 };
+
+function modStripRoot(files) {
+  var paths = Object.keys(files).filter(function (p) { return !files[p].dir; });
+  if (!paths.length) return { root: '', strip: function (p) { return p; } };
+  var firstSegs = paths.map(function (p) { return p.split('/')[0]; });
+  var allSame = firstSegs.every(function (s) { return s === firstSegs[0]; }) && paths.every(function (p) { return p.indexOf('/') !== -1; });
+  if (allSame) {
+    return { root: firstSegs[0], strip: function (p) { return p.substring(firstSegs[0].length + 1); } };
+  }
+  return { root: '', strip: function (p) { return p; } };
+}
+
+function modCapList(arr, cap) {
+  if (arr.length <= cap) return arr.join(', ');
+  return arr.slice(0, cap).join(', ') + ', and ' + (arr.length - cap) + ' more';
+}
+
+async function convertModFolderZip(file) {
+  var inZip = await JSZip.loadAsync(file);
+  var rootInfo = modStripRoot(inZip.files);
+
+  var characterFiles = [];
+  var stageBase = {};
+  var songFolders = {};
+  var directCopies = [];
+  var skipped = {};
+  var weekFiles = [];
+
+  function addSkip(reason, path) {
+    if (!skipped[reason]) skipped[reason] = [];
+    skipped[reason].push(path);
+  }
+
+  var allPaths = Object.keys(inZip.files);
+  for (var i = 0; i < allPaths.length; i++) {
+    var rawPath = allPaths[i];
+    var entry = inZip.files[rawPath];
+    if (entry.dir) continue;
+    var relPath = rootInfo.strip(rawPath);
+    if (!relPath) continue;
+
+    var m;
+    if ((m = relPath.match(/^characters\/([^\/]+\.json)$/i))) {
+      characterFiles.push({ path: rawPath, filename: m[1] });
+    } else if ((m = relPath.match(/^stages\/([^\/]+)\.lua$/i))) {
+      stageBase[m[1]] = stageBase[m[1]] || {};
+      stageBase[m[1]].lua = rawPath;
+    } else if ((m = relPath.match(/^stages\/([^\/]+)\.json$/i))) {
+      stageBase[m[1]] = stageBase[m[1]] || {};
+      stageBase[m[1]].json = rawPath;
+    } else if ((m = relPath.match(/^data\/([^\/]+)\/events\.json$/i))) {
+      songFolders[m[1]] = songFolders[m[1]] || {};
+      songFolders[m[1]].events = rawPath;
+    } else if ((m = relPath.match(/^data\/([^\/]+)\/meta\.txt$/i))) {
+      songFolders[m[1]] = songFolders[m[1]] || {};
+      songFolders[m[1]].meta = rawPath;
+    } else if ((m = relPath.match(/^data\/([^\/]+)\/([^\/]+)\.json$/i)) && m[2].toLowerCase() === m[1].toLowerCase()) {
+      songFolders[m[1]] = songFolders[m[1]] || {};
+      songFolders[m[1]].chart = rawPath;
+    } else if (/^data\/[^\/]+\/.+\.lua$/i.test(relPath)) {
+      addSkip('Per-song Lua scripts (custom code, not data)', relPath);
+    } else if (/^data\/[^\/]+\/.*(Dialogue|GameOver)[^\/]*\.txt$/i.test(relPath)) {
+      addSkip('Dialogue / cutscene text files', relPath);
+    } else if (/^data\/(characterList|stageList|weekList|freeplayColors|introText|specialThanks|data-goes-here)\.txt$/i.test(relPath) || /^data\/main-view\.xml$/i.test(relPath)) {
+      addSkip('Psych-specific config files', relPath);
+    } else if ((m = relPath.match(/^weeks\/([^\/]+)\.json$/i))) {
+      weekFiles.push({ path: rawPath, name: m[1] });
+    } else if (/^weeks\//i.test(relPath)) {
+      addSkip('Week/story menu files', relPath);
+    } else if (/^custom_events\//i.test(relPath)) {
+      addSkip('Custom event definitions (no V-Slice equivalent)', relPath);
+    } else if ((m = relPath.match(/^songs\/([^\/]+)\/(.+\.ogg)$/i))) {
+      directCopies.push({ src: rawPath, dest: 'songs/' + m[1] + '/' + m[2] });
+    } else if ((m = relPath.match(/^images\/characters\/(.+)$/i))) {
+      directCopies.push({ src: rawPath, dest: 'shared/images/characters/' + m[1] });
+    } else if ((m = relPath.match(/^images\/icons\/([^\/]+\.png)$/i))) {
+      directCopies.push({ src: rawPath, dest: 'images/icons/' + m[1] });
+    } else if (/^images\/icons\//i.test(relPath)) {
+      addSkip('Nested icon subfolders (credits etc — UI-only)', relPath);
+    } else if (/^images\/(pixelUI|menudifficulties|storymenu)\//i.test(relPath)) {
+      addSkip('Psych UI-only image folders', relPath);
+    } else if ((m = relPath.match(/^images\/([^\/]+)\/(.+)$/i))) {
+      directCopies.push({ src: rawPath, dest: 'shared/images/stages/' + m[1] + '/' + m[2] });
+    } else if (/^images\/[^\/]+$/i.test(relPath)) {
+      addSkip('Top-level UI images (menus, HUD, notes)', relPath);
+    } else if (/^music\//i.test(relPath)) {
+      addSkip('Menu music (different system in V-Slice)', relPath);
+    } else if (/^sounds\//i.test(relPath)) {
+      addSkip('Menu/UI sound effects (different system in V-Slice)', relPath);
+    } else {
+      addSkip('Other unrecognized files', relPath);
+    }
+  }
+
+  var outZip = new JSZip();
+  var outRoot = (rootInfo.root || 'converted-mod') + ' (V-Slice)';
+  var counts = { characters: 0, stages: 0, songs: 0, copied: 0 };
+  var errors = [];
+
+  for (var ci = 0; ci < characterFiles.length; ci++) {
+    var cf = characterFiles[ci];
+    try {
+      var charText = await inZip.files[cf.path].async('string');
+      var psychChar = JSON.parse(charText);
+      var outChar = convertPsychCharacter(psychChar, MOD_DEFAULT_CHAR_META);
+      outZip.file(outRoot + '/data/characters/' + cf.filename, JSON.stringify(outChar, null, 2));
+      counts.characters++;
+    } catch (err) {
+      errors.push('Character ' + cf.filename + ': ' + err.message);
+    }
+  }
+
+  var stageBaseNames = Object.keys(stageBase);
+  for (var si = 0; si < stageBaseNames.length; si++) {
+    var baseName = stageBaseNames[si];
+    var stageEntry = stageBase[baseName];
+    if (!stageEntry.json) continue;
+    try {
+      var stageText = await inZip.files[stageEntry.json].async('string');
+      var stageJson = JSON.parse(stageText);
+      var luaText = stageEntry.lua ? await inZip.files[stageEntry.lua].async('string') : '';
+      var stageResult = convertPsychStage(stageJson, luaText, MOD_DEFAULT_STAGE_META);
+      outZip.file(outRoot + '/data/stages/' + baseName + '.json', JSON.stringify(stageResult.stage, null, 2));
+      counts.stages++;
+    } catch (err) {
+      errors.push('Stage ' + baseName + ': ' + err.message);
+    }
+  }
+
+  var songIds = Object.keys(songFolders);
+  for (var sfi = 0; sfi < songIds.length; sfi++) {
+    var songId = songIds[sfi];
+    var sf = songFolders[songId];
+    if (!sf.chart) {
+      addSkip('Song folders missing a matching <folder>.json chart', 'data/' + songId + '/');
+      continue;
+    }
+    try {
+      var chartText = await inZip.files[sf.chart].async('string');
+      var chartJson = JSON.parse(chartText);
+      if (sf.events) {
+        var eventsText = await inZip.files[sf.events].async('string');
+        var eventsJson = JSON.parse(eventsText);
+        var extEvents = (eventsJson.song && eventsJson.song.events) || [];
+        if (extEvents.length) chartJson.song.events = extEvents;
+      }
+      var songName = '', artist = '';
+      if (sf.meta) {
+        var metaText = await inZip.files[sf.meta].async('string');
+        var parsedMeta = parseModMetaTxt(metaText);
+        songName = parsedMeta.songName;
+        artist = parsedMeta.artist;
+      }
+      var chartResult = convertPsychChart(chartJson, modChartMeta(songName, artist));
+      outZip.file(outRoot + '/data/songs/' + songId + '/' + songId + '-chart.json', JSON.stringify(chartResult.chart, null, 2));
+      outZip.file(outRoot + '/data/songs/' + songId + '/' + songId + '-metadata.json', JSON.stringify(chartResult.metadata, null, 2));
+      counts.songs++;
+    } catch (err) {
+      errors.push('Song ' + songId + ': ' + err.message);
+    }
+  }
+
+  for (var di = 0; di < directCopies.length; di++) {
+    var dc = directCopies[di];
+    try {
+      var buf = await inZip.files[dc.src].async('arraybuffer');
+      outZip.file(outRoot + '/' + dc.dest, buf);
+      counts.copied++;
+    } catch (err) {
+      errors.push('Copy ' + dc.src + ': ' + err.message);
+    }
+  }
+
+  var weekSummaryLines = [];
+  for (var wi = 0; wi < weekFiles.length; wi++) {
+    try {
+      var weekText = await inZip.files[weekFiles[wi].path].async('string');
+      var weekJson = JSON.parse(weekText);
+      var songNames = (weekJson.songs || []).map(function (s) { return Array.isArray(s) ? s[0] : s; });
+      weekSummaryLines.push('  ' + (weekJson.weekName || weekFiles[wi].name) + ': ' + songNames.join(', '));
+    } catch (err) {
+      weekSummaryLines.push('  ' + weekFiles[wi].name + ': (could not read song list)');
+    }
+  }
+
+  var polymodMeta = {
+    title: rootInfo.root || 'Converted Mod',
+    description: 'Converted from a Psych Engine mod by V Stuff. Edit this description.',
+    contributors: [],
+    api_version: '0.8.6',
+    mod_version: '1.0.0',
+    license: ''
+  };
+  outZip.file(outRoot + '/_polymod_meta.json', JSON.stringify(polymodMeta, null, 2));
+
+  var report = [];
+  report.push('V Stuff — Mod Folder Conversion Report');
+  report.push('Source: ' + (rootInfo.root || file.name));
+  report.push('');
+  report.push('Converted automatically:');
+  report.push('  characters: ' + counts.characters);
+  report.push('  stages: ' + counts.stages);
+  report.push('  songs (chart + metadata): ' + counts.songs);
+  report.push('  files copied directly (audio/images): ' + counts.copied);
+
+  if (errors.length) {
+    report.push('');
+    report.push('Errors (these files did not convert):');
+    errors.forEach(function (e) { report.push('  - ' + e); });
+  }
+
+  if (weekSummaryLines.length) {
+    report.push('');
+    report.push('Week/story files found — data/levels/*.json needs to be built by hand (story-menu character art and a title asset aren\'t things Psych stores), but here\'s the song order for reference:');
+    weekSummaryLines.forEach(function (l) { report.push(l); });
+  }
+
+  var skipReasons = Object.keys(skipped);
+  if (skipReasons.length) {
+    report.push('');
+    report.push('Not converted — needs manual attention:');
+    skipReasons.forEach(function (reason) {
+      report.push('  ' + reason + ' (' + skipped[reason].length + '): ' + modCapList(skipped[reason], 5));
+    });
+  }
+
+  report.push('');
+  report.push('_polymod_meta.json was generated with placeholder description/version — edit it before publishing.');
+
+  var outBlob = await outZip.generateAsync({ type: 'blob' });
+  return { blob: outBlob, report: report.join('\n'), outRoot: outRoot };
+}
+
+var lastModResult = null;
+
+function setModStatus(text, kind) {
+  var el = document.getElementById('modStatus');
+  el.textContent = text;
+  el.className = kind || '';
+}
+
+document.getElementById('modZipFileBtn').addEventListener('click', function () {
+  document.getElementById('modZipFileInput').click();
+});
+document.getElementById('modZipFileInput').addEventListener('change', function (e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('modZipFileLabel').textContent = file.name;
+});
+
+document.getElementById('modConvertBtn').addEventListener('click', function () {
+  var fileInput = document.getElementById('modZipFileInput');
+  var file = fileInput.files[0];
+  if (!file) {
+    setModStatus('Upload a mod folder .zip first.', 'err');
+    return;
+  }
+
+  setModStatus('Converting — this can take a moment for mods with a lot of images...', '');
+  document.getElementById('modOutputActions').style.display = 'none';
+
+  convertModFolderZip(file).then(function (result) {
+    lastModResult = result;
+    var wrap = document.getElementById('modOutputWrap');
+    wrap.innerHTML = '<textarea readonly spellcheck="false" style="width:100%; height:420px;"></textarea>';
+    wrap.querySelector('textarea').value = result.report;
+    document.getElementById('modOutputActions').style.display = 'flex';
+    setModStatus('Done.', 'ok');
+  }).catch(function (err) {
+    setModStatus('Conversion failed: ' + err.message, 'err');
+  });
+});
+
+document.getElementById('modDownloadBtn').addEventListener('click', function () {
+  if (!lastModResult) return;
+  var url = URL.createObjectURL(lastModResult.blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'converted-mod.zip';
   a.click();
   URL.revokeObjectURL(url);
 });
