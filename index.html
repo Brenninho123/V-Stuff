@@ -999,6 +999,8 @@
 <nav class="dir-nav">
   <button id="navDirForward" class="active" type="button">Psych &#8594; V-Slice</button>
   <button id="navDirReverse" type="button">V-Slice &#8594; Psych</button>
+  <button id="navDirCodenameForward" type="button">Codename &#8594; V-Slice</button>
+  <button id="navDirCodenameReverse" type="button">V-Slice &#8594; Codename</button>
 </nav>
 
 <nav class="page-nav">
@@ -1367,6 +1369,72 @@
   </section>
 </main>
 
+<main id="codenamePage" class="page">
+  <section class="panel">
+    <h2><span class="tag from">FROM</span> Codename Engine</h2>
+    <p class="sub">Paste or upload a Codename Engine chart (the file with <code>"codenameChart": true</code> and a <code>strumLines</code> array). Codename doesn't store BPM or song credits in the chart itself, so fill those in below.</p>
+
+    <label class="first">Chart JSON (Codename)</label>
+    <div class="file-drop">
+      <span id="codenameFileLabel">No file selected</span>
+      <button id="codenameFileBtn" type="button">Upload .json</button>
+      <input type="file" id="codenameFileInput" accept="application/json,.json">
+    </div>
+    <textarea id="codenameInput" placeholder="{ &quot;codenameChart&quot;: true, &quot;strumLines&quot;: [...] }" spellcheck="false"></textarea>
+
+    <div class="field-row">
+      <div>
+        <label class="first">Song name</label>
+        <input type="text" id="codenameSongName" placeholder="Song name">
+      </div>
+      <div>
+        <label class="first">Artist</label>
+        <input type="text" id="codenameArtist" placeholder="Artist">
+      </div>
+    </div>
+    <div class="field-row">
+      <div>
+        <label class="first">BPM (not stored in Codename charts)</label>
+        <input type="text" id="codenameBpm" placeholder="100">
+      </div>
+      <div>
+        <label class="first">Stage</label>
+        <input type="text" id="codenameStage" placeholder="mainStage">
+      </div>
+    </div>
+
+    <button id="codenameConvertBtn" type="button">Convert chart</button>
+    <div id="codenameStatus"></div>
+  </section>
+
+  <section class="panel">
+    <h2><span class="tag to">TO</span> V-Slice</h2>
+    <p class="sub">Two files: chart and metadata, same as the Charts tab.</p>
+
+    <div id="codenameOutputWrap">
+      <div class="empty-state">Convert a chart to see the output here.</div>
+    </div>
+
+    <div class="output-actions" id="codenameOutputActions" style="display:none;">
+      <button id="codenameCopyChartBtn" type="button">Copy chart.json</button>
+      <button id="codenameCopyMetaBtn" type="button">Copy metadata.json</button>
+      <button id="codenameDownloadBtn" type="button">Download both</button>
+    </div>
+
+    <div class="notes-info">
+      <strong>Field mapping</strong> — each <code>strumLines</code> entry with <code>type: 1</code> is treated as the player's strumline (notes land on lanes 0-3, matching Codename's own <code>id</code> directly); every other strumline (type 0 — typically "opponent", but this also covers a separate "girlfriend" strumline if the chart has one, since Codename supports strumlines beyond just player/opponent) is merged onto lanes 4-7. <code>sLen</code> maps straight to <code>l</code> — both are already in milliseconds. A note's numeric <code>type</code> is looked up in the chart's <code>noteTypes</code> array and used as <code>k</code> when it resolves to something other than the default. The <code>"Camera Movement"</code> event (seen in real charts with a single 0/1 param) converts to <code>FocusCamera</code> with that param as the character index — everything else passes through with its original name, with each entry of its <code>params</code> array preserved as <code>p1</code>, <code>p2</code>, etc. so nothing is silently dropped.<br><br>
+      <strong>Not carried over / lossy</strong> — if a chart has <em>three or more</em> non-player strumlines, they all collapse onto the same 4-7 lanes and become indistinguishable in the output; check the note count if that matters for your chart. BPM, song name, artist, and stage aren't stored in the Codename chart file at all (they likely live in a separate metadata file Codename keeps elsewhere) — the fields on the left are the only source for those. <code>noteTypes</code> entries beyond a name aren't inspected for further behavior. Codename → V-Slice only for now; the reverse direction and Characters/Stages support aren't built yet.
+    </div>
+  </section>
+</main>
+
+<main id="codenameNotBuiltPage" class="page">
+  <section class="panel" style="grid-column: 1 / -1;">
+    <h2>Codename &#8594; V-Slice</h2>
+    <p class="sub">Not built yet for Codename Engine — only Charts is supported so far. Use the Charts tab above, or switch to a Psych &#8594; V-Slice direction for Characters, Stages, Mod Folder, or Weeks.</p>
+  </section>
+</main>
+
 <main id="chartsPageR" class="page">
   <section class="panel">
     <h2><span class="tag from">FROM</span> V-Slice</h2>
@@ -1567,6 +1635,13 @@
   <section class="panel" style="grid-column: 1 / -1;">
     <h2>Weeks <span style="color:var(--text-dim); font-weight:500; font-size:14px;">— V-Slice → Psych</span></h2>
     <p class="sub">Not built yet — level → week only goes Psych → V-Slice for now.</p>
+  </section>
+</main>
+
+<main id="codenamePageR" class="page">
+  <section class="panel" style="grid-column: 1 / -1;">
+    <h2>V-Slice &#8594; Codename</h2>
+    <p class="sub">Not built yet. Codename Engine support only goes Codename &#8594; V-Slice for now, and only Charts — the other tabs above aren't wired up for Codename in either direction yet.</p>
   </section>
 </main>
 
@@ -2203,37 +2278,42 @@ document.getElementById('downloadBtn').addEventListener('click', function () {
 });
 
 var DIR_PAGES = {
-  forward: ['chartsPage', 'charactersPage', 'stagesPage', 'modFolderPage', 'weeksPage'],
-  reverse: ['chartsPageR', 'charactersPageR', 'stagesPageR', 'modFolderPageR', 'weeksPageR']
+  psychForward: ['chartsPage', 'charactersPage', 'stagesPage', 'modFolderPage', 'weeksPage'],
+  psychReverse: ['chartsPageR', 'charactersPageR', 'stagesPageR', 'modFolderPageR', 'weeksPageR'],
+  codenameForward: ['codenamePage', 'codenameNotBuiltPage', 'codenameNotBuiltPage', 'codenameNotBuiltPage', 'codenameNotBuiltPage'],
+  codenameReverse: ['codenamePageR', 'codenamePageR', 'codenamePageR', 'codenamePageR', 'codenamePageR']
 };
-var currentDir = 'forward';
+var DIR_NAV_IDS = ['navDirForward', 'navDirReverse', 'navDirCodenameForward', 'navDirCodenameReverse'];
+var DIR_KEYS = ['psychForward', 'psychReverse', 'codenameForward', 'codenameReverse'];
+var PAGE_NAV_IDS = ['navCharts', 'navCharacters', 'navStages', 'navModFolder', 'navWeeks'];
+var currentDir = 'psychForward';
 var currentTool = 0;
 
 function showPage() {
-  ['forward', 'reverse'].forEach(function (dir) {
-    DIR_PAGES[dir].forEach(function (id) {
-      document.getElementById(id).classList.remove('active');
-    });
+  var allPageIds = {};
+  DIR_KEYS.forEach(function (dir) {
+    DIR_PAGES[dir].forEach(function (id) { allPageIds[id] = true; });
+  });
+  Object.keys(allPageIds).forEach(function (id) {
+    document.getElementById(id).classList.remove('active');
   });
   document.getElementById(DIR_PAGES[currentDir][currentTool]).classList.add('active');
 
-  document.getElementById('navCharts').classList.toggle('active', currentTool === 0);
-  document.getElementById('navCharacters').classList.toggle('active', currentTool === 1);
-  document.getElementById('navStages').classList.toggle('active', currentTool === 2);
-  document.getElementById('navModFolder').classList.toggle('active', currentTool === 3);
-  document.getElementById('navWeeks').classList.toggle('active', currentTool === 4);
+  PAGE_NAV_IDS.forEach(function (id, i) {
+    document.getElementById(id).classList.toggle('active', currentTool === i);
+  });
 
-  document.getElementById('navDirForward').classList.toggle('active', currentDir === 'forward');
-  document.getElementById('navDirReverse').classList.toggle('active', currentDir === 'reverse');
+  DIR_NAV_IDS.forEach(function (id, i) {
+    document.getElementById(id).classList.toggle('active', currentDir === DIR_KEYS[i]);
+  });
 }
 
-document.getElementById('navDirForward').addEventListener('click', function () { currentDir = 'forward'; showPage(); });
-document.getElementById('navDirReverse').addEventListener('click', function () { currentDir = 'reverse'; showPage(); });
-document.getElementById('navCharts').addEventListener('click', function () { currentTool = 0; showPage(); });
-document.getElementById('navCharacters').addEventListener('click', function () { currentTool = 1; showPage(); });
-document.getElementById('navStages').addEventListener('click', function () { currentTool = 2; showPage(); });
-document.getElementById('navModFolder').addEventListener('click', function () { currentTool = 3; showPage(); });
-document.getElementById('navWeeks').addEventListener('click', function () { currentTool = 4; showPage(); });
+DIR_NAV_IDS.forEach(function (id, i) {
+  document.getElementById(id).addEventListener('click', function () { currentDir = DIR_KEYS[i]; showPage(); });
+});
+PAGE_NAV_IDS.forEach(function (id, i) {
+  document.getElementById(id).addEventListener('click', function () { currentTool = i; showPage(); });
+});
 
 var lastCharResult = null;
 
@@ -4548,6 +4628,84 @@ function convertPsychWeek(psychWeek, meta) {
   };
 }
 
+function convertCodenameChart(codenameJson, meta) {
+  meta = meta || {};
+  var strumLines = codenameJson.strumLines || [];
+  var noteTypes = codenameJson.noteTypes || [];
+  var bpm = meta.bpm || 100;
+
+  var notesOut = [];
+  var nonPlayerStrumCount = 0;
+  strumLines.forEach(function (sl) {
+    if (sl.type !== 1) nonPlayerStrumCount++;
+  });
+
+  strumLines.forEach(function (sl) {
+    var isPlayer = sl.type === 1;
+    var laneOffset = isPlayer ? 0 : 4;
+    (sl.notes || []).forEach(function (n) {
+      var lane = Math.max(0, Math.min(3, n.id));
+      var out = { t: n.time, d: lane + laneOffset, l: n.sLen || 0, p: [] };
+      if (n.type) {
+        var typeEntry = noteTypes[n.type];
+        if (typeEntry) out.k = typeof typeEntry === 'string' ? typeEntry : (typeEntry.name || typeEntry.id || String(n.type));
+      }
+      notesOut.push(out);
+    });
+  });
+  notesOut.sort(function (a, b) { return a.t - b.t; });
+
+  var eventsOut = (codenameJson.events || []).map(function (ev) {
+    if (ev.name === 'Camera Movement' && Array.isArray(ev.params) && ev.params.length) {
+      return { t: ev.time, e: 'FocusCamera', v: { char: ev.params[0] } };
+    }
+    var v = {};
+    (ev.params || []).forEach(function (p, i) { v['p' + (i + 1)] = p; });
+    return { t: ev.time, e: ev.name, v: v };
+  });
+  eventsOut.sort(function (a, b) { return a.t - b.t; });
+
+  var scrollSpeed = typeof codenameJson.scrollSpeed === 'number' ? codenameJson.scrollSpeed : 1;
+
+  var chartOut = {
+    version: '2.0.0',
+    scrollSpeed: { easy: scrollSpeed, normal: scrollSpeed, hard: scrollSpeed },
+    events: eventsOut,
+    notes: {
+      easy: JSON.parse(JSON.stringify(notesOut)),
+      normal: JSON.parse(JSON.stringify(notesOut)),
+      hard: JSON.parse(JSON.stringify(notesOut))
+    },
+    generatedBy: 'V Stuff'
+  };
+
+  var metadataOut = {
+    version: '2.2.4',
+    songName: meta.songName || 'Untitled',
+    artist: meta.artist || '',
+    charter: '',
+    offsets: {},
+    playData: {
+      difficulties: ['easy', 'normal', 'hard'],
+      characters: {
+        player: 'bf',
+        girlfriend: 'gf',
+        opponent: 'dad',
+        opponentVocals: ['dad'],
+        playerVocals: ['bf']
+      },
+      stage: meta.stage || 'mainStage',
+      noteStyle: 'funkin',
+      ratings: { easy: 0, normal: 0, hard: 0 },
+      album: ''
+    },
+    generatedBy: 'V Stuff',
+    timeChanges: [{ t: 0, bpm: bpm }]
+  };
+
+  return { chart: chartOut, metadata: metadataOut, nonPlayerStrumCount: nonPlayerStrumCount, strumLineCount: strumLines.length };
+}
+
 function parseModMetaTxt(text) {
   var lines = text.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(function (l) { return l.length; });
   var songName = lines[0] || '';
@@ -4949,6 +5107,108 @@ document.getElementById('weekDownloadBtn').addEventListener('click', function ()
   a.download = name + '.json';
   a.click();
   URL.revokeObjectURL(url);
+});
+
+var lastCodenameResult = null;
+
+function setCodenameStatus(text, kind) {
+  var el = document.getElementById('codenameStatus');
+  el.textContent = text;
+  el.className = kind || '';
+}
+
+document.getElementById('codenameFileBtn').addEventListener('click', function () {
+  document.getElementById('codenameFileInput').click();
+});
+document.getElementById('codenameFileInput').addEventListener('change', function (e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('codenameFileLabel').textContent = file.name;
+  var reader = new FileReader();
+  reader.onload = function (ev) { document.getElementById('codenameInput').value = ev.target.result; };
+  reader.onerror = function () { setCodenameStatus('Could not read that file.', 'err'); };
+  reader.readAsText(file);
+});
+
+document.getElementById('codenameConvertBtn').addEventListener('click', function () {
+  var raw = document.getElementById('codenameInput').value.trim();
+  if (!raw) {
+    setCodenameStatus('Paste or upload a Codename chart first.', 'err');
+    return;
+  }
+  var parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    setCodenameStatus('JSON doesn\'t parse: ' + err.message, 'err');
+    return;
+  }
+  if (!parsed.strumLines) {
+    setCodenameStatus('That doesn\'t look like a Codename chart — no "strumLines" array found.', 'err');
+    return;
+  }
+
+  var meta = {
+    songName: document.getElementById('codenameSongName').value.trim(),
+    artist: document.getElementById('codenameArtist').value.trim(),
+    bpm: toNumber(document.getElementById('codenameBpm').value, 100),
+    stage: document.getElementById('codenameStage').value.trim()
+  };
+
+  lastCodenameResult = convertCodenameChart(parsed, meta);
+
+  var wrap = document.getElementById('codenameOutputWrap');
+  wrap.innerHTML =
+    '<label class="first">chart.json</label>' +
+    '<textarea id="codenameChartOutput" readonly spellcheck="false" style="height:200px;"></textarea>' +
+    '<label class="first">metadata.json</label>' +
+    '<textarea id="codenameMetaOutput" readonly spellcheck="false" style="height:160px;"></textarea>';
+  document.getElementById('codenameChartOutput').value = JSON.stringify(lastCodenameResult.chart, null, 2);
+  document.getElementById('codenameMetaOutput').value = JSON.stringify(lastCodenameResult.metadata, null, 2);
+  document.getElementById('codenameOutputActions').style.display = 'flex';
+
+  var noteCount = lastCodenameResult.chart.notes.normal.length;
+  var warn = lastCodenameResult.nonPlayerStrumCount > 1 ? ' — heads up: ' + lastCodenameResult.nonPlayerStrumCount + ' non-player strumlines were merged onto lanes 4-7 and are no longer distinguishable.' : '';
+  setCodenameStatus('Converted ' + noteCount + ' notes from ' + lastCodenameResult.strumLineCount + ' strumline(s).' + warn, warn ? 'err' : 'ok');
+});
+
+document.getElementById('codenameCopyChartBtn').addEventListener('click', function () {
+  if (!lastCodenameResult) return;
+  var temp = document.createElement('textarea');
+  temp.value = JSON.stringify(lastCodenameResult.chart, null, 2);
+  document.body.appendChild(temp);
+  temp.select();
+  document.execCommand('copy');
+  document.body.removeChild(temp);
+  setCodenameStatus('Copied chart.json.', 'ok');
+});
+
+document.getElementById('codenameCopyMetaBtn').addEventListener('click', function () {
+  if (!lastCodenameResult) return;
+  var temp = document.createElement('textarea');
+  temp.value = JSON.stringify(lastCodenameResult.metadata, null, 2);
+  document.body.appendChild(temp);
+  temp.select();
+  document.execCommand('copy');
+  document.body.removeChild(temp);
+  setCodenameStatus('Copied metadata.json.', 'ok');
+});
+
+document.getElementById('codenameDownloadBtn').addEventListener('click', function () {
+  if (!lastCodenameResult) return;
+  var songSlug = (document.getElementById('codenameSongName').value.trim() || 'song').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'song';
+  [
+    { data: lastCodenameResult.chart, name: songSlug + '-chart.json' },
+    { data: lastCodenameResult.metadata, name: songSlug + '-metadata.json' }
+  ].forEach(function (f) {
+    var blob = new Blob([JSON.stringify(f.data, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = f.name;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
 });
 
 (function () {
