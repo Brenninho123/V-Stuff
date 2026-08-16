@@ -3285,8 +3285,8 @@ function convertPsychCharacter(psychJson, meta) {
     outAnims.push(outAnim);
   }
 
-  var camX = meta.cameraOffsetX !== null ? meta.cameraOffsetX : 0;
-  var camY = meta.cameraOffsetY !== null ? meta.cameraOffsetY : 0;
+  var camX = meta.cameraOffsetX !== undefined && meta.cameraOffsetX !== null ? meta.cameraOffsetX : 0;
+  var camY = meta.cameraOffsetY !== undefined && meta.cameraOffsetY !== null ? meta.cameraOffsetY : 0;
 
   var out = {
     version: '1.0.0',
@@ -3307,8 +3307,8 @@ function convertPsychCharacter(psychJson, meta) {
   if (hasDeath) {
     out.death = {
       cameraOffsets: [
-        meta.deathCameraOffsetX !== null ? meta.deathCameraOffsetX : camX,
-        meta.deathCameraOffsetY !== null ? meta.deathCameraOffsetY : camY
+        meta.deathCameraOffsetX !== undefined && meta.deathCameraOffsetX !== null ? meta.deathCameraOffsetX : camX,
+        meta.deathCameraOffsetY !== undefined && meta.deathCameraOffsetY !== null ? meta.deathCameraOffsetY : camY
       ]
     };
   }
