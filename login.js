@@ -44,6 +44,12 @@ function showGoogleSignedInState(profile) {
   var name = document.getElementById('googleProfileName');
   if (avatar) avatar.src = profile.picture || '';
   if (name) name.textContent = profile.name || profile.email || 'Signed in';
+
+  var profileNameInput = document.getElementById('profileNameInput');
+  if (profileNameInput && !profileNameInput.value.trim() && profile.name) {
+    profileNameInput.value = profile.name;
+    try { localStorage.setItem('vstuffProfileName', profile.name); } catch (err) {}
+  }
 }
 
 function showGoogleSignedOutState() {
