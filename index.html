@@ -195,6 +195,51 @@
     width: 100%;
   }
 
+  .options-profile-input {
+    width: 100%;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    padding: 7px 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+  }
+
+  .week-song-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+    min-height: 20px;
+  }
+
+  .week-song-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 8px 5px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+  }
+
+  .week-song-chip-remove {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--red);
+    color: #fff;
+    font-size: 12px;
+    line-height: 18px;
+    text-align: center;
+    cursor: pointer;
+    padding: 0;
+    border: none;
+  }
+
   .eyebrow {
     font-family: 'JetBrains Mono', monospace;
     font-size: 12px;
@@ -644,6 +689,42 @@
     padding: 12px;
   }
 
+  #charEditorCanvasWrap.canvas-bg-dark, .char-canvas-wrap.canvas-bg-dark {
+    background-image: none;
+    background-color: #16151c;
+  }
+
+  #charEditorCanvasWrap.canvas-bg-light, .char-canvas-wrap.canvas-bg-light {
+    background-image: none;
+    background-color: #f4f3f8;
+  }
+
+  .canvas-bg-toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+
+  .canvas-bg-toggle-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .canvas-bg-btn {
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+
+  .canvas-bg-btn.active {
+    border-color: var(--blue);
+    color: var(--blue);
+  }
+
   .canvas-loading {
     position: absolute;
     inset: 0;
@@ -1058,6 +1139,17 @@
       </div>
       <button id="googleSignOutBtn" class="options-signout" type="button" data-i18n="optionsSignOut">Sign out</button>
     </div>
+
+    <div class="options-divider"></div>
+
+    <div class="options-panel-title" data-i18n="optionsProfile">Your profile</div>
+    <div class="options-hint" data-i18n="optionsProfileDesc" style="margin-bottom: 8px;">Optional — just a display name for this browser, stored locally. It's never sent anywhere on its own.</div>
+    <input type="text" id="profileNameInput" class="options-profile-input" data-i18n-placeholder="optionsProfileNamePlaceholder" placeholder="Display name">
+    <label class="options-radio" style="margin-top: 8px;">
+      <input type="checkbox" id="profileVisibleCheckbox" checked>
+      <span data-i18n="optionsProfileVisible">Show my name when I submit a project to Online</span>
+    </label>
+    <div class="options-hint" id="profileVisibleHint" data-i18n="optionsProfileVisibleOnHint">Your name gets added to the pre-filled submission — you still post it yourself, nothing is automatic.</div>
   </div>
 
   <div class="eyebrow">V Stuff</div>
@@ -1827,6 +1919,7 @@
   <button id="navEditorChart" class="active" type="button" data-i18n="navEditorChart">Chart Editor</button>
   <button id="navEditorCharacter" type="button" data-i18n="navEditorCharacter">Character Editor</button>
   <button id="navEditorStage" type="button" data-i18n="navEditorStage">Stage Editor</button>
+  <button id="navEditorWeek" type="button" data-i18n="navEditorWeek">Week Editor</button>
 </nav>
 
 <div id="chartEditorSub">
@@ -1865,6 +1958,10 @@
         <label style="display:flex; align-items:center; gap:6px; font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--text-dim); margin:0;">
           Vol
           <input type="range" id="editorVolume" min="0" max="100" value="70" style="width:90px;">
+        </label>
+        <label style="display:flex; align-items:center; gap:6px; font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--text-dim); margin:0; cursor:pointer;" title="Evens out quiet and loud sections so playback volume feels more consistent">
+          <input type="checkbox" id="editorNormalizeAudio">
+          Normalize
         </label>
       </div>
       <audio id="editorAudioEl" style="display:none;"></audio>
@@ -1950,6 +2047,13 @@
         </div>
       </div>
 
+      <div class="canvas-bg-toggle-row">
+        <span class="canvas-bg-toggle-label">Preview background:</span>
+        <button id="charEditorBgChecker" class="canvas-bg-btn active" type="button" data-bg="checker">Checkered</button>
+        <button id="charEditorBgDark" class="canvas-bg-btn" type="button" data-bg="dark">Dark</button>
+        <button id="charEditorBgLight" class="canvas-bg-btn" type="button" data-bg="light">Light</button>
+      </div>
+
       <div id="charEditorCanvasWrap">
         <canvas id="charEditorCanvas" width="360" height="360"></canvas>
         <div id="charEditorLoading" class="canvas-loading" style="display:none;">
@@ -2017,6 +2121,13 @@
         </div>
       </div>
 
+      <div class="canvas-bg-toggle-row">
+        <span class="canvas-bg-toggle-label">Preview background:</span>
+        <button id="stageEditorBgChecker" class="canvas-bg-btn active" type="button" data-bg="checker">Checkered</button>
+        <button id="stageEditorBgDark" class="canvas-bg-btn" type="button" data-bg="dark">Dark</button>
+        <button id="stageEditorBgLight" class="canvas-bg-btn" type="button" data-bg="light">Light</button>
+      </div>
+
       <div id="stageEditorCanvasWrap" class="char-canvas-wrap">
         <canvas id="stageEditorCanvas" width="360" height="360"></canvas>
         <div id="stageEditorLoading" class="canvas-loading" style="display:none;">
@@ -2064,6 +2175,69 @@
         <button id="stageEditorInsertAnimsBtn" type="button">Insert detected animations into prop</button>
         <button id="stageEditorCopyBtn" type="button">Copy</button>
         <button id="stageEditorDownloadBtn" type="button">Download</button>
+      </div>
+    </div>
+  </section>
+</main>
+</div>
+
+<div id="weekEditorSub" style="display:none;">
+<main class="page active" style="display:block;">
+  <section class="panel" style="grid-column: 1 / -1;">
+    <div class="editor-controls">
+      <h2>Week Editor <span style="color:var(--text-dim); font-weight:500; font-size:14px;">— build a V-Slice level.json</span></h2>
+      <p class="sub">Fill in the fields below to build a level from scratch. Any change to a field regenerates the JSON on the right from scratch — so if you paste or upload an existing level.json into that box, hit "Load JSON into fields" right away, before touching any field above, or your paste will get overwritten the next time a field changes.</p>
+
+      <div class="field-row">
+        <div>
+          <label class="first">Level name</label>
+          <input type="text" id="weekEdName" placeholder="Vs Impostor">
+        </div>
+        <div>
+          <label class="first">Title asset path</label>
+          <input type="text" id="weekEdTitleAsset" placeholder="storymenu/titles/vsimpostor">
+        </div>
+      </div>
+      <div class="field-row">
+        <div>
+          <label class="first">Background color</label>
+          <input type="text" id="weekEdBackground" placeholder="#000000">
+        </div>
+        <div>
+          <label class="first">Visible in story mode</label>
+          <select id="weekEdVisible">
+            <option value="true">true</option>
+            <option value="false">false</option>
+          </select>
+        </div>
+      </div>
+
+      <label class="first">Songs</label>
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="weekEdSongInput" placeholder="song-id (matches data/songs/&lt;id&gt;/)" style="flex:1;">
+        <button id="weekEdAddSongBtn" type="button">Add</button>
+      </div>
+      <div id="weekEdSongList" class="week-song-list"></div>
+
+      <label class="first">Load existing level JSON (optional)</label>
+      <div class="file-drop">
+        <span id="weekEdFileLabel">No file selected</span>
+        <button id="weekEdFileBtn" type="button">Upload .json</button>
+        <input type="file" id="weekEdFileInput" accept="application/json,.json">
+      </div>
+      <button id="weekEdLoadBtn" type="button">Load JSON into fields</button>
+      <div id="weekEdStatus"></div>
+    </div>
+
+    <div style="padding: 0 48px 32px;">
+      <label class="first">level.json</label>
+      <textarea id="weekEdOutput" spellcheck="false" style="height:280px;"></textarea>
+      <div class="output-actions" style="margin-top:10px;">
+        <button id="weekEdCopyBtn" type="button">Copy</button>
+        <button id="weekEdDownloadBtn" type="button">Download</button>
+      </div>
+      <div class="notes-info">
+        Same schema as the Weeks converter tab: <code>props</code> stays empty here too, since story-menu character art has to be built and referenced by hand — this editor is for getting the song list, name, visibility, and placeholder title/background right without hand-editing JSON. Save the download as <code>data/levels/&lt;Name&gt;.json</code> (no spaces, matching case).
       </div>
     </div>
   </section>
@@ -2390,7 +2564,7 @@ function trySuggestFields() {
   var raw = document.getElementById('psychInput').value.trim();
   if (!raw) return;
   try {
-    var parsed = JSON.parse(raw);
+    var parsed = safeJsonParse(raw);
     var song = parsed.song;
     if (!song) return;
     var songNameField = document.getElementById('songName');
@@ -2411,7 +2585,7 @@ document.getElementById('convertBtn').addEventListener('click', function () {
 
   var parsed;
   try {
-    parsed = JSON.parse(raw);
+    parsed = safeJsonParse(raw);
   } catch (err) {
     setStatus('That JSON doesn\'t parse: ' + err.message, 'err');
     return;
@@ -2526,12 +2700,16 @@ var I18N = {
     installApp: 'Install app',
     navGenerator: 'Generator', navEditor: 'Editor', navOnline: 'Online',
     navCharts: 'Charts', navCharacters: 'Characters', navStages: 'Stages', navModFolder: 'Mod Folder', navWeeks: 'Weeks',
-    navEditorChart: 'Chart Editor', navEditorCharacter: 'Character Editor', navEditorStage: 'Stage Editor',
+    navEditorChart: 'Chart Editor', navEditorCharacter: 'Character Editor', navEditorStage: 'Stage Editor', navEditorWeek: 'Week Editor',
     introSkip: 'Tap to skip',
     onlineTitle: 'Community Showcase',
     onlineDesc: 'Posts here are public GitHub issues on this project\'s repo, tagged "showcase" — there\'s no separate database, so anyone can read them and anyone with a GitHub account can post one. Hit Submit to open a pre-filled issue on GitHub, fill it in, and it\'ll show up here once it\'s posted.',
     onlineSubmit: 'Submit your project', onlineRefresh: 'Refresh', onlineLoading: 'Loading projects…',
-    optionsAccount: 'Account (optional)', optionsGoogleUnconfigured: "Google sign-in isn't set up on this deployment yet.", optionsSignOut: 'Sign out'
+    optionsAccount: 'Account (optional)', optionsGoogleUnconfigured: "Google sign-in isn't set up on this deployment yet.", optionsSignOut: 'Sign out',
+    optionsProfile: 'Your profile', optionsProfileDesc: "Optional — just a display name for this browser, stored locally. It's never sent anywhere on its own.",
+    optionsProfileNamePlaceholder: 'Display name', optionsProfileVisible: 'Show my name when I submit a project to Online',
+    optionsProfileVisibleOnHint: "Your name gets added to the pre-filled submission — you still post it yourself, nothing is automatic.",
+    optionsProfileVisibleOffHint: "Your submissions will use a generic template with no name attached."
   },
   pt: {
     optionsTheme: 'Tema', optionsLanguage: 'Idioma', optionsEnglish: 'Inglês', optionsPortuguese: 'Português',
@@ -2539,12 +2717,16 @@ var I18N = {
     installApp: 'Instalar app',
     navGenerator: 'Gerador', navEditor: 'Editor', navOnline: 'Online',
     navCharts: 'Charts', navCharacters: 'Personagens', navStages: 'Stages', navModFolder: 'Pasta do Mod', navWeeks: 'Weeks',
-    navEditorChart: 'Editor de Chart', navEditorCharacter: 'Editor de Personagem', navEditorStage: 'Editor de Stage',
+    navEditorChart: 'Editor de Chart', navEditorCharacter: 'Editor de Personagem', navEditorStage: 'Editor de Stage', navEditorWeek: 'Editor de Week',
     introSkip: 'Toque para pular',
     onlineTitle: 'Vitrine da Comunidade',
     onlineDesc: 'Os posts aqui são issues públicas no repositório do projeto no GitHub, marcadas com "showcase" — não tem banco de dados separado, então qualquer um pode ler e qualquer um com conta no GitHub pode postar. Clique em Enviar pra abrir uma issue pré-preenchida no GitHub, preencha, e ela aparece aqui depois de postada.',
     onlineSubmit: 'Envie seu projeto', onlineRefresh: 'Atualizar', onlineLoading: 'Carregando projetos…',
-    optionsAccount: 'Conta (opcional)', optionsGoogleUnconfigured: 'O login com Google ainda não foi configurado neste site.', optionsSignOut: 'Sair'
+    optionsAccount: 'Conta (opcional)', optionsGoogleUnconfigured: 'O login com Google ainda não foi configurado neste site.', optionsSignOut: 'Sair',
+    optionsProfile: 'Seu perfil', optionsProfileDesc: 'Opcional — só um nome de exibição pra esse navegador, guardado localmente. Nunca é enviado pra lugar nenhum sozinho.',
+    optionsProfileNamePlaceholder: 'Nome de exibição', optionsProfileVisible: 'Mostrar meu nome quando eu enviar um projeto pro Online',
+    optionsProfileVisibleOnHint: 'Seu nome é adicionado ao envio pré-preenchido — você ainda posta manualmente, nada é automático.',
+    optionsProfileVisibleOffHint: 'Seus envios vão usar um modelo genérico, sem nome anexado.'
   }
 };
 
@@ -2573,6 +2755,39 @@ document.getElementById('themeMoonBtn').addEventListener('click', function () { 
 
 applyTheme();
 
+function loadProfile() {
+  var name = '';
+  var visible = true;
+  try {
+    name = localStorage.getItem('vstuffProfileName') || '';
+    var storedVisible = localStorage.getItem('vstuffProfileVisible');
+    if (storedVisible !== null) visible = storedVisible === 'true';
+  } catch (err) {}
+  document.getElementById('profileNameInput').value = name;
+  document.getElementById('profileVisibleCheckbox').checked = visible;
+  updateProfileVisibleHint();
+}
+
+function saveProfileName() {
+  try { localStorage.setItem('vstuffProfileName', document.getElementById('profileNameInput').value.trim()); } catch (err) {}
+}
+
+function saveProfileVisible() {
+  try { localStorage.setItem('vstuffProfileVisible', document.getElementById('profileVisibleCheckbox').checked ? 'true' : 'false'); } catch (err) {}
+  updateProfileVisibleHint();
+}
+
+function updateProfileVisibleHint() {
+  var dict = I18N[currentLang] || I18N.en;
+  var visible = document.getElementById('profileVisibleCheckbox').checked;
+  document.getElementById('profileVisibleHint').textContent = visible ? dict.optionsProfileVisibleOnHint : dict.optionsProfileVisibleOffHint;
+}
+
+document.getElementById('profileNameInput').addEventListener('input', saveProfileName);
+document.getElementById('profileVisibleCheckbox').addEventListener('change', saveProfileVisible);
+
+loadProfile();
+
 var currentLang = 'en';
 try {
   var storedLang = localStorage.getItem('vstuffLang');
@@ -2586,7 +2801,13 @@ function applyTranslations() {
     var key = nodes[i].getAttribute('data-i18n');
     if (dict[key] !== undefined) nodes[i].textContent = dict[key];
   }
+  var placeholderNodes = document.querySelectorAll('[data-i18n-placeholder]');
+  for (var j = 0; j < placeholderNodes.length; j++) {
+    var pKey = placeholderNodes[j].getAttribute('data-i18n-placeholder');
+    if (dict[pKey] !== undefined) placeholderNodes[j].placeholder = dict[pKey];
+  }
   document.documentElement.lang = currentLang;
+  if (document.getElementById('profileVisibleHint')) updateProfileVisibleHint();
 }
 
 document.getElementById('optionsGearBtn').addEventListener('click', function (ev) {
@@ -2614,6 +2835,34 @@ for (var lr = 0; lr < langRadios.length; lr++) {
 }
 
 applyTranslations();
+
+function safeJsonParse(text) {
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+  try {
+    return JSON.parse(text);
+  } catch (firstErr) {
+    var cleaned = text.replace(/,(\s*[\]}])/g, '$1');
+    if (cleaned !== text) {
+      try {
+        return JSON.parse(cleaned);
+      } catch (secondErr) {
+        throw describeJsonError(secondErr, cleaned);
+      }
+    }
+    throw describeJsonError(firstErr, text);
+  }
+}
+
+function describeJsonError(err, text) {
+  var msg = err.message;
+  var posMatch = msg.match(/position (\d+)/);
+  if (!posMatch) return err;
+  var pos = parseInt(posMatch[1], 10);
+  var before = text.slice(0, pos);
+  var line = (before.match(/\n/g) || []).length + 1;
+  var col = pos - before.lastIndexOf('\n');
+  return new Error(msg + ' — line ' + line + ', column ' + col);
+}
 
 function toNumber(value, fallback) {
   var n = parseFloat(value);
@@ -2850,7 +3099,7 @@ document.getElementById('charEditorInsertAnimsBtn').addEventListener('click', fu
   var raw = document.getElementById('charEditorJsonInput').value.trim();
   var obj;
   try {
-    obj = raw ? JSON.parse(raw) : { version: '1.0.0', name: '', renderType: 'multianimateatlas', assetPath: '', scale: 1, singTime: 4, flipX: false, offsets: [0, 0], cameraOffsets: [0, 0], animations: [] };
+    obj = raw ? safeJsonParse(raw) : { version: '1.0.0', name: '', renderType: 'multianimateatlas', assetPath: '', scale: 1, singTime: 4, flipX: false, offsets: [0, 0], cameraOffsets: [0, 0], animations: [] };
   } catch (err) {
     setCharEditorStatus('Current JSON doesn\'t parse, fix it first: ' + err.message, 'err');
     return;
@@ -2867,6 +3116,24 @@ document.getElementById('charEditorInsertAnimsBtn').addEventListener('click', fu
   document.getElementById('charEditorJsonInput').value = JSON.stringify(obj, null, 2);
   setCharEditorStatus('Added ' + added + ' new animation(s) from the atlas.', added ? 'ok' : '');
 });
+
+function setupCanvasBgToggle(wrapId, buttonIds) {
+  var wrap = document.getElementById(wrapId);
+  buttonIds.forEach(function (btnId) {
+    var btn = document.getElementById(btnId);
+    btn.addEventListener('click', function () {
+      buttonIds.forEach(function (otherId) { document.getElementById(otherId).classList.remove('active'); });
+      btn.classList.add('active');
+      wrap.classList.remove('canvas-bg-dark', 'canvas-bg-light');
+      var bg = btn.getAttribute('data-bg');
+      if (bg === 'dark') wrap.classList.add('canvas-bg-dark');
+      else if (bg === 'light') wrap.classList.add('canvas-bg-light');
+    });
+  });
+}
+
+setupCanvasBgToggle('charEditorCanvasWrap', ['charEditorBgChecker', 'charEditorBgDark', 'charEditorBgLight']);
+setupCanvasBgToggle('stageEditorCanvasWrap', ['stageEditorBgChecker', 'stageEditorBgDark', 'stageEditorBgLight']);
 
 document.getElementById('charEditorCopyBtn').addEventListener('click', function () {
   var text = document.getElementById('charEditorJsonInput').value;
@@ -3056,7 +3323,7 @@ document.getElementById('stageEditorInsertAnimsBtn').addEventListener('click', f
   var raw = document.getElementById('stageEditorJsonInput').value.trim();
   var obj;
   try {
-    obj = raw ? JSON.parse(raw) : { version: '1.0.0', name: '', props: [], characters: {}, cameraZoom: 1, directory: 'shared' };
+    obj = raw ? safeJsonParse(raw) : { version: '1.0.0', name: '', props: [], characters: {}, cameraZoom: 1, directory: 'shared' };
   } catch (err) {
     setStageEditorStatus('Current JSON doesn\'t parse, fix it first: ' + err.message, 'err');
     return;
@@ -3123,6 +3390,146 @@ document.getElementById('stageEditorDownloadBtn').addEventListener('click', func
   a.click();
   URL.revokeObjectURL(url);
 });
+
+var weekEdSongs = [];
+
+function setWeekEdStatus(text, kind) {
+  var el = document.getElementById('weekEdStatus');
+  el.textContent = text;
+  el.className = kind || '';
+}
+
+function renderWeekEdSongList() {
+  var wrap = document.getElementById('weekEdSongList');
+  wrap.innerHTML = '';
+  weekEdSongs.forEach(function (song, i) {
+    var chip = document.createElement('div');
+    chip.className = 'week-song-chip';
+    var label = document.createElement('span');
+    label.textContent = song;
+    var removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'week-song-chip-remove';
+    removeBtn.textContent = '\u00d7';
+    removeBtn.title = 'Remove';
+    removeBtn.addEventListener('click', function () {
+      weekEdSongs.splice(i, 1);
+      renderWeekEdSongList();
+      regenerateWeekEdOutput();
+    });
+    chip.appendChild(label);
+    chip.appendChild(removeBtn);
+    wrap.appendChild(chip);
+  });
+}
+
+function regenerateWeekEdOutput() {
+  var name = document.getElementById('weekEdName').value.trim() || 'Week';
+  var titleAsset = document.getElementById('weekEdTitleAsset').value.trim() || ('storymenu/titles/' + weekSlug(name));
+  var background = document.getElementById('weekEdBackground').value.trim() || '#000000';
+  var visible = document.getElementById('weekEdVisible').value === 'true';
+
+  var level = {
+    version: '1.0.0',
+    name: name,
+    titleAsset: titleAsset,
+    visible: visible,
+    props: [],
+    background: background,
+    songs: weekEdSongs.slice()
+  };
+
+  document.getElementById('weekEdOutput').value = JSON.stringify(level, null, 2);
+}
+
+['weekEdName', 'weekEdTitleAsset', 'weekEdBackground'].forEach(function (id) {
+  document.getElementById(id).addEventListener('input', regenerateWeekEdOutput);
+});
+document.getElementById('weekEdVisible').addEventListener('change', regenerateWeekEdOutput);
+
+function addWeekEdSong() {
+  var input = document.getElementById('weekEdSongInput');
+  var value = input.value.trim().toLowerCase();
+  if (!value) return;
+  if (weekEdSongs.indexOf(value) !== -1) {
+    setWeekEdStatus('"' + value + '" is already in the list.', 'err');
+    return;
+  }
+  weekEdSongs.push(value);
+  input.value = '';
+  renderWeekEdSongList();
+  regenerateWeekEdOutput();
+  setWeekEdStatus('');
+}
+
+document.getElementById('weekEdAddSongBtn').addEventListener('click', addWeekEdSong);
+document.getElementById('weekEdSongInput').addEventListener('keydown', function (ev) {
+  if (ev.key === 'Enter') {
+    ev.preventDefault();
+    addWeekEdSong();
+  }
+});
+
+document.getElementById('weekEdFileBtn').addEventListener('click', function () {
+  document.getElementById('weekEdFileInput').click();
+});
+document.getElementById('weekEdFileInput').addEventListener('change', function (e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('weekEdFileLabel').textContent = file.name;
+  var reader = new FileReader();
+  reader.onload = function (ev) { document.getElementById('weekEdOutput').value = ev.target.result; };
+  reader.onerror = function () { setWeekEdStatus('Could not read that file.', 'err'); };
+  reader.readAsText(file);
+});
+
+document.getElementById('weekEdLoadBtn').addEventListener('click', function () {
+  var raw = document.getElementById('weekEdOutput').value.trim();
+  if (!raw) {
+    setWeekEdStatus('Upload a level.json first, or paste one into the output box below, then hit Load.', 'err');
+    return;
+  }
+  try {
+    var parsed = safeJsonParse(raw);
+    document.getElementById('weekEdName').value = parsed.name || '';
+    document.getElementById('weekEdTitleAsset').value = parsed.titleAsset || '';
+    document.getElementById('weekEdBackground').value = parsed.background || '';
+    document.getElementById('weekEdVisible').value = parsed.visible === false ? 'false' : 'true';
+    weekEdSongs = Array.isArray(parsed.songs) ? parsed.songs.slice() : [];
+    renderWeekEdSongList();
+    regenerateWeekEdOutput();
+    setWeekEdStatus('Loaded ' + weekEdSongs.length + ' song(s).', 'ok');
+  } catch (err) {
+    setWeekEdStatus('Could not load: ' + err.message, 'err');
+  }
+});
+
+document.getElementById('weekEdCopyBtn').addEventListener('click', function () {
+  var text = document.getElementById('weekEdOutput').value;
+  if (!text) return;
+  var temp = document.createElement('textarea');
+  temp.value = text;
+  document.body.appendChild(temp);
+  temp.select();
+  document.execCommand('copy');
+  document.body.removeChild(temp);
+  setWeekEdStatus('Copied to clipboard.', 'ok');
+});
+
+document.getElementById('weekEdDownloadBtn').addEventListener('click', function () {
+  var text = document.getElementById('weekEdOutput').value;
+  if (!text) return;
+  var name = weekFilenameFromName(document.getElementById('weekEdName').value.trim() || 'Week');
+  var blob = new Blob([text], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = name + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+regenerateWeekEdOutput();
 
 function parseCodenameXmlDoc(xmlText, rootTagCheck) {
   var parser = new DOMParser();
@@ -3373,7 +3780,7 @@ function trySuggestCharFields() {
   var raw = document.getElementById('charInput').value.trim();
   if (!raw) return;
   try {
-    var parsed = JSON.parse(raw);
+    var parsed = safeJsonParse(raw);
     var nameField = document.getElementById('charName');
     var assetField = document.getElementById('charAssetPath');
     if (!nameField.value && parsed.image) nameField.value = guessDisplayName(parsed.image);
@@ -3392,7 +3799,7 @@ document.getElementById('charConvertBtn').addEventListener('click', function () 
 
   var parsed;
   try {
-    parsed = JSON.parse(raw);
+    parsed = safeJsonParse(raw);
   } catch (err) {
     setCharStatus('That JSON doesn\'t parse: ' + err.message, 'err');
     return;
@@ -3672,7 +4079,7 @@ function trySuggestStageFields() {
   var raw = document.getElementById('stageInput').value.trim();
   if (!raw) return;
   try {
-    var parsed = JSON.parse(raw);
+    var parsed = safeJsonParse(raw);
     var nameField = document.getElementById('stageName');
     if (!nameField.value && parsed.directory) nameField.value = guessDisplayName(parsed.directory);
   } catch (err) {
@@ -3689,7 +4096,7 @@ document.getElementById('stageConvertBtn').addEventListener('click', function ()
 
   var parsed;
   try {
-    parsed = JSON.parse(raw);
+    parsed = safeJsonParse(raw);
   } catch (err) {
     setStageStatus('That JSON doesn\'t parse: ' + err.message, 'err');
     return;
@@ -3933,7 +4340,7 @@ function trySuggestChartRDifficulty() {
   var raw = document.getElementById('chartRInput').value.trim();
   if (!raw) return;
   try {
-    var parsed = JSON.parse(raw);
+    var parsed = safeJsonParse(raw);
     var notes = parsed.notes || {};
     var order = ['normal', 'hard', 'easy'];
     var best = order.find(function (d) { return notes[d] && notes[d].length; });
@@ -4103,7 +4510,7 @@ document.getElementById('charRConvertBtn').addEventListener('click', function ()
   }
   var parsed;
   try {
-    parsed = JSON.parse(raw);
+    parsed = safeJsonParse(raw);
   } catch (err) {
     setCharRStatus('That JSON doesn\'t parse: ' + err.message, 'err');
     return;
@@ -4302,7 +4709,7 @@ document.getElementById('stageRConvertBtn').addEventListener('click', function (
   }
   var parsed;
   try {
-    parsed = JSON.parse(raw);
+    parsed = safeJsonParse(raw);
   } catch (err) {
     setStageRStatus('That JSON doesn\'t parse: ' + err.message, 'err');
     return;
@@ -4363,8 +4770,8 @@ document.getElementById('navAppGenerator').addEventListener('click', function ()
 document.getElementById('navAppEditor').addEventListener('click', function () { showAppTab(1); });
 document.getElementById('navAppOnline').addEventListener('click', function () { showAppTab(2); });
 
-var EDITOR_SUBTABS = ['navEditorChart', 'navEditorCharacter', 'navEditorStage'];
-var EDITOR_SUBPAGES = ['chartEditorSub', 'characterEditorSub', 'stageEditorSub'];
+var EDITOR_SUBTABS = ['navEditorChart', 'navEditorCharacter', 'navEditorStage', 'navEditorWeek'];
+var EDITOR_SUBPAGES = ['chartEditorSub', 'characterEditorSub', 'stageEditorSub', 'weekEditorSub'];
 
 function showEditorSubtab(index) {
   for (var i = 0; i < EDITOR_SUBTABS.length; i++) {
@@ -4376,6 +4783,7 @@ function showEditorSubtab(index) {
 document.getElementById('navEditorChart').addEventListener('click', function () { showEditorSubtab(0); });
 document.getElementById('navEditorCharacter').addEventListener('click', function () { showEditorSubtab(1); });
 document.getElementById('navEditorStage').addEventListener('click', function () { showEditorSubtab(2); });
+document.getElementById('navEditorWeek').addEventListener('click', function () { showEditorSubtab(3); });
 
 var editorChart = null;
 var editorNotes = [];
@@ -4838,6 +5246,50 @@ document.getElementById('editorGridInner').addEventListener('contextmenu', funct
   updateEditorPlayhead();
 });
 
+var editorAudioCtx = null;
+var editorAudioCompressor = null;
+
+function setupEditorAudioGraph() {
+  if (editorAudioCtx) return true;
+  var AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return false;
+  try {
+    editorAudioCtx = new AudioContextClass();
+    var audio = document.getElementById('editorAudioEl');
+    var source = editorAudioCtx.createMediaElementSource(audio);
+    editorAudioCompressor = editorAudioCtx.createDynamicsCompressor();
+    source.connect(editorAudioCompressor);
+    editorAudioCompressor.connect(editorAudioCtx.destination);
+    applyEditorNormalizeState();
+    return true;
+  } catch (err) {
+    editorAudioCtx = null;
+    editorAudioCompressor = null;
+    return false;
+  }
+}
+
+function applyEditorNormalizeState() {
+  if (!editorAudioCompressor) return;
+  var enabled = document.getElementById('editorNormalizeAudio').checked;
+  var t = editorAudioCtx.currentTime;
+  if (enabled) {
+    editorAudioCompressor.threshold.setValueAtTime(-30, t);
+    editorAudioCompressor.knee.setValueAtTime(20, t);
+    editorAudioCompressor.ratio.setValueAtTime(8, t);
+    editorAudioCompressor.attack.setValueAtTime(0.02, t);
+    editorAudioCompressor.release.setValueAtTime(0.3, t);
+  } else {
+    editorAudioCompressor.threshold.setValueAtTime(0, t);
+    editorAudioCompressor.ratio.setValueAtTime(1, t);
+  }
+}
+
+document.getElementById('editorNormalizeAudio').addEventListener('change', function () {
+  if (setupEditorAudioGraph() && editorAudioCtx.state === 'suspended') editorAudioCtx.resume();
+  applyEditorNormalizeState();
+});
+
 document.getElementById('editorAudioFileBtn').addEventListener('click', function () {
   document.getElementById('editorAudioFileInput').click();
 });
@@ -4859,11 +5311,14 @@ document.getElementById('editorVolume').addEventListener('input', function () {
 document.getElementById('editorPlayBtn').addEventListener('click', function () {
   var audio = document.getElementById('editorAudioEl');
   if (audio.paused) {
+    setupEditorAudioGraph();
+    if (editorAudioCtx && editorAudioCtx.state === 'suspended') editorAudioCtx.resume();
     audio.play();
   } else {
     audio.pause();
   }
 });
+
 
 function formatEditorTime(sec) {
   if (!isFinite(sec) || sec < 0) sec = 0;
@@ -5383,7 +5838,7 @@ function autofillWeekFields() {
   if (!raw) return;
   var parsed;
   try {
-    parsed = JSON.parse(raw);
+    parsed = safeJsonParse(raw);
   } catch (err) {
     return;
   }
@@ -5402,7 +5857,7 @@ document.getElementById('weekConvertBtn').addEventListener('click', function () 
   }
   var parsed;
   try {
-    parsed = JSON.parse(raw);
+    parsed = safeJsonParse(raw);
   } catch (err) {
     setWeekStatus('JSON doesn\'t parse: ' + err.message, 'err');
     return;
@@ -5474,7 +5929,7 @@ document.getElementById('codenameConvertBtn').addEventListener('click', function
   }
   var parsed;
   try {
-    parsed = JSON.parse(raw);
+    parsed = safeJsonParse(raw);
   } catch (err) {
     setCodenameStatus('JSON doesn\'t parse: ' + err.message, 'err');
     return;
