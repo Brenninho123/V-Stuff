@@ -1302,6 +1302,10 @@
 
     <div class="options-divider"></div>
 
+    <label class="options-radio"><input type="checkbox" id="uiSoundToggle" checked> <span data-i18n="optionsUiSound">UI sounds</span></label>
+
+    <div class="options-divider"></div>
+
     <div class="options-panel-title" data-i18n="optionsLanguage">Language</div>
     <label class="options-radio"><input type="radio" name="lang" value="en" checked> <span data-i18n="optionsEnglish">English</span></label>
     <label class="options-radio"><input type="radio" name="lang" value="pt"> <span data-i18n="optionsPortuguese">Portuguese</span></label>
@@ -3112,7 +3116,7 @@ function guessDisplayName(image) {
 
 var I18N = {
   en: {
-    optionsTheme: 'Theme', optionsLanguage: 'Language', optionsEnglish: 'English', optionsPortuguese: 'Portuguese',
+    optionsTheme: 'Theme', optionsUiSound: 'UI sounds', optionsLanguage: 'Language', optionsEnglish: 'English', optionsPortuguese: 'Portuguese',
     headerDesc: "Converts a Psych Engine chart into the V-Slice chart and metadata format. Paste or upload a chart, fill in what Psych doesn't store, and get both output files.",
     installApp: 'Install app',
     navGenerator: 'Generator', navEditor: 'Editor', navOnline: 'Online',
@@ -3131,7 +3135,7 @@ var I18N = {
     optionsProfileVisibleOffHint: "Your submissions will use a generic template with no name attached."
   },
   pt: {
-    optionsTheme: 'Tema', optionsLanguage: 'Idioma', optionsEnglish: 'Inglês', optionsPortuguese: 'Português',
+    optionsTheme: 'Tema', optionsUiSound: 'Sons da interface', optionsLanguage: 'Idioma', optionsEnglish: 'Inglês', optionsPortuguese: 'Português',
     headerDesc: 'Converte um chart do Psych Engine para o formato de chart e metadata do V-Slice. Cole ou envie um chart, preencha o que o Psych não guarda, e baixe os dois arquivos.',
     installApp: 'Instalar app',
     navGenerator: 'Gerador', navEditor: 'Editor', navOnline: 'Online',
@@ -3175,6 +3179,38 @@ document.getElementById('themeSunBtn').addEventListener('click', function () { s
 document.getElementById('themeMoonBtn').addEventListener('click', function () { setTheme('dark'); });
 
 applyTheme();
+
+var uiClickSound = null;
+var uiSoundMuted = false;
+try {
+  uiSoundMuted = localStorage.getItem('vstuffUiSoundMuted') === 'true';
+} catch (err) {}
+document.getElementById('uiSoundToggle').checked = !uiSoundMuted;
+
+function playUiClickSound() {
+  if (uiSoundMuted) return;
+  try {
+    if (!uiClickSound) uiClickSound = new Audio('ui/sounds/scrollMenu.ogg');
+    uiClickSound.currentTime = 0;
+    var playPromise = uiClickSound.play();
+    if (playPromise && playPromise.catch) playPromise.catch(function () {});
+  } catch (err) {}
+}
+
+document.getElementById('uiSoundToggle').addEventListener('change', function () {
+  uiSoundMuted = !this.checked;
+  try { localStorage.setItem('vstuffUiSoundMuted', uiSoundMuted ? 'true' : 'false'); } catch (err) {}
+});
+
+document.addEventListener('click', function (ev) {
+  if (ev.target.closest && ev.target.closest('button, .online-card, input[type="checkbox"], input[type="radio"]')) {
+    playUiClickSound();
+  }
+});
+
+document.addEventListener('change', function (ev) {
+  if (ev.target.tagName === 'SELECT') playUiClickSound();
+});
 
 function loadProfile() {
   var name = '';
