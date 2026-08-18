@@ -560,6 +560,35 @@
     100% { top: 100%; }
   }
 
+  .intro-bars-wrap {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 1;
+  }
+
+  .intro-impact-glow {
+    position: absolute;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(233,76,209,0.35), rgba(34,195,255,0.2) 40%, transparent 70%);
+    left: 50%;
+    top: 35px;
+    transform: translate(-50%, -50%) scale(0.3);
+    opacity: 0;
+    z-index: 0;
+    pointer-events: none;
+    animation: introImpactPulse 0.6s ease-out 0.78s both;
+  }
+
+  @keyframes introImpactPulse {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+    40% { opacity: 0.85; }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+  }
+
   .intro-bars {
     display: flex;
     gap: 8px;
@@ -586,6 +615,33 @@
     55% { height: 70px; opacity: 1; transform: scaleY(1.15); }
     75% { transform: scaleY(0.92); }
     100% { height: 70px; opacity: 1; transform: scaleY(1); }
+  }
+
+  .intro-receptors {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .intro-receptors span {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    border: 2px solid var(--text-dim);
+    opacity: 0;
+  }
+
+  .intro-receptors span:nth-child(1) { border-color: var(--purple); animation: introReceptorFlash 0.5s ease-out 0.495s both; }
+  .intro-receptors span:nth-child(2) { border-color: var(--blue); animation: introReceptorFlash 0.5s ease-out 0.585s both; }
+  .intro-receptors span:nth-child(3) { border-color: var(--green); animation: introReceptorFlash 0.5s ease-out 0.675s both; }
+  .intro-receptors span:nth-child(4) { border-color: var(--red); animation: introReceptorFlash 0.5s ease-out 0.765s both; }
+
+  @keyframes introReceptorFlash {
+    0% { opacity: 1; transform: scale(0.6); }
+    60% { opacity: 0.55; transform: scale(1.7); }
+    100% { opacity: 0; transform: scale(2.3); }
   }
 
   .intro-wordwrap {
@@ -660,7 +716,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .intro-grid, .intro-scan { display: none; }
+    .intro-grid, .intro-scan, .intro-impact-glow, .intro-receptors { display: none; }
     .intro-bars span { animation: none; height: 70px; opacity: 1; transform: none; }
     .intro-word { animation: none; opacity: 1; transform: none; }
     .intro-underline { animation: none; width: 100%; }
@@ -1098,7 +1154,11 @@
 <div class="intro-overlay" id="introOverlay">
   <div class="intro-grid"></div>
   <div class="intro-scan"></div>
-  <div class="intro-bars"><span></span><span></span><span></span><span></span></div>
+  <div class="intro-bars-wrap">
+    <div class="intro-impact-glow"></div>
+    <div class="intro-bars"><span></span><span></span><span></span><span></span></div>
+    <div class="intro-receptors"><span></span><span></span><span></span><span></span></div>
+  </div>
   <div class="intro-wordwrap">
     <div class="intro-word">V STUFF</div>
     <div class="intro-underline"></div>
@@ -1171,6 +1231,7 @@
   <button id="navDirReverse" type="button">V-Slice &#8594; Psych</button>
   <button id="navDirCodenameForward" type="button">Codename &#8594; V-Slice</button>
   <button id="navDirCodenameReverse" type="button">V-Slice &#8594; Codename</button>
+  <button id="navDirCodenameToPsych" type="button">Codename &#8594; Psych</button>
 </nav>
 
 <nav class="page-nav">
@@ -1907,7 +1968,66 @@
 <main id="codenamePageR" class="page">
   <section class="panel" style="grid-column: 1 / -1;">
     <h2>V-Slice &#8594; Codename</h2>
-    <p class="sub">Not built yet. Codename Engine support only goes Codename &#8594; V-Slice for now, and only Charts — the other tabs above aren't wired up for Codename in either direction yet.</p>
+    <p class="sub">Not built yet — this direction isn't wired up. Codename support currently covers Codename &#8594; V-Slice (Charts/Characters/Stages) and Codename &#8594; Psych (Charts).</p>
+  </section>
+</main>
+
+<main id="codenameToPsychPage" class="page">
+  <section class="panel">
+    <h2><span class="tag from">FROM</span> Codename Engine</h2>
+    <p class="sub">Paste or upload a Codename Engine chart. This reuses the same Codename &#8594; V-Slice mapping and then runs it through the V-Slice &#8594; Psych converter, so the results and caveats match those two tabs exactly — including the lossy 3+ non-player-strumline case.</p>
+
+    <label class="first">Chart JSON (Codename)</label>
+    <div class="file-drop">
+      <span id="codenameToPsychFileLabel">No file selected</span>
+      <button id="codenameToPsychFileBtn" type="button">Upload .json</button>
+      <input type="file" id="codenameToPsychFileInput" accept="application/json,.json">
+    </div>
+    <textarea id="codenameToPsychInput" placeholder="{ &quot;codenameChart&quot;: true, &quot;strumLines&quot;: [...] }" spellcheck="false"></textarea>
+
+    <div class="field-row">
+      <div>
+        <label class="first">Song name</label>
+        <input type="text" id="codenameToPsychSongName" placeholder="Song name">
+      </div>
+      <div>
+        <label class="first">Difficulty label</label>
+        <input type="text" id="codenameToPsychDifficulty" placeholder="normal">
+      </div>
+    </div>
+    <div class="field-row">
+      <div>
+        <label class="first">BPM (not stored in Codename charts)</label>
+        <input type="text" id="codenameToPsychBpm" placeholder="100">
+      </div>
+      <div>
+        <label class="first">Stage</label>
+        <input type="text" id="codenameToPsychStage" placeholder="stage">
+      </div>
+    </div>
+
+    <button id="codenameToPsychConvertBtn" type="button">Convert chart</button>
+    <div id="codenameToPsychStatus"></div>
+  </section>
+
+  <section class="panel">
+    <h2><span class="tag to">TO</span> Psych Engine</h2>
+    <textarea id="codenameToPsychOutput" readonly spellcheck="false" placeholder="Converted Psych chart JSON will appear here."></textarea>
+    <div class="output-actions">
+      <button id="codenameToPsychCopyBtn" type="button">Copy</button>
+      <button id="codenameToPsychDownloadBtn" type="button">Download</button>
+    </div>
+
+    <div class="notes-info">
+      Goes Codename &#8594; V-Slice &#8594; Psych internally (two already-tested converters chained), so the note lane mapping (player strumline &#8594; lanes 0-3, everything else &#8594; lanes 4-7), the <code>"Camera Movement"</code> &#8594; <code>FocusCamera</code> event mapping, and the 3+ non-player-strumline caveat are identical to the Codename &#8594; V-Slice Charts tab. From there it's the same V-Slice &#8594; Psych mapping as the regular Charts tab: sections rebuilt from the note data, difficulty picked from the field above, needsVoices left on. Only one difficulty comes out per conversion — Codename doesn't separate difficulties into different files the way Psych does, so run this once per difficulty label you need if your Codename chart actually has more than one.
+    </div>
+  </section>
+</main>
+
+<main id="codenameToPsychNotBuiltPage" class="page">
+  <section class="panel" style="grid-column: 1 / -1;">
+    <h2>Codename &#8594; Psych</h2>
+    <p class="sub">Not built yet for this direction — only Charts is supported. Use the Charts tab above.</p>
   </section>
 </main>
 
@@ -2629,10 +2749,11 @@ var DIR_PAGES = {
   psychForward: ['chartsPage', 'charactersPage', 'stagesPage', 'modFolderPage', 'weeksPage'],
   psychReverse: ['chartsPageR', 'charactersPageR', 'stagesPageR', 'modFolderPageR', 'weeksPageR'],
   codenameForward: ['codenamePage', 'codenameCharactersPage', 'codenameStagesPage', 'codenameNotBuiltPage', 'codenameNotBuiltPage'],
-  codenameReverse: ['codenamePageR', 'codenamePageR', 'codenamePageR', 'codenamePageR', 'codenamePageR']
+  codenameReverse: ['codenamePageR', 'codenamePageR', 'codenamePageR', 'codenamePageR', 'codenamePageR'],
+  codenameToPsych: ['codenameToPsychPage', 'codenameToPsychNotBuiltPage', 'codenameToPsychNotBuiltPage', 'codenameToPsychNotBuiltPage', 'codenameToPsychNotBuiltPage']
 };
-var DIR_NAV_IDS = ['navDirForward', 'navDirReverse', 'navDirCodenameForward', 'navDirCodenameReverse'];
-var DIR_KEYS = ['psychForward', 'psychReverse', 'codenameForward', 'codenameReverse'];
+var DIR_NAV_IDS = ['navDirForward', 'navDirReverse', 'navDirCodenameForward', 'navDirCodenameReverse', 'navDirCodenameToPsych'];
+var DIR_KEYS = ['psychForward', 'psychReverse', 'codenameForward', 'codenameReverse', 'codenameToPsych'];
 var PAGE_NAV_IDS = ['navCharts', 'navCharacters', 'navStages', 'navModFolder', 'navWeeks'];
 var currentDir = 'psychForward';
 var currentTool = 0;
@@ -5497,6 +5618,21 @@ function convertCodenameChart(codenameJson, meta) {
   return { chart: chartOut, metadata: metadataOut, nonPlayerStrumCount: nonPlayerStrumCount, strumLineCount: strumLines.length };
 }
 
+function convertCodenameToPsychChart(codenameJson, meta) {
+  meta = meta || {};
+  var vsliceResult = convertCodenameChart(codenameJson, meta);
+  var psychResult = convertVSliceToPsychChart(vsliceResult.chart, vsliceResult.metadata, {
+    difficulty: meta.difficulty || 'normal',
+    needsVoices: true
+  });
+  return {
+    psych: psychResult,
+    nonPlayerStrumCount: vsliceResult.nonPlayerStrumCount,
+    strumLineCount: vsliceResult.strumLineCount,
+    noteCount: (psychResult.song.notes || []).reduce(function (sum, section) { return sum + (section.sectionNotes || []).length; }, 0)
+  };
+}
+
 function parseModMetaTxt(text) {
   var lines = text.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(function (l) { return l.length; });
   var songName = lines[0] || '';
@@ -6000,6 +6136,87 @@ document.getElementById('codenameDownloadBtn').addEventListener('click', functio
     a.click();
     URL.revokeObjectURL(url);
   });
+});
+
+var lastCodenameToPsychResult = null;
+
+function setCodenameToPsychStatus(text, kind) {
+  var el = document.getElementById('codenameToPsychStatus');
+  el.textContent = text;
+  el.className = kind || '';
+}
+
+document.getElementById('codenameToPsychFileBtn').addEventListener('click', function () {
+  document.getElementById('codenameToPsychFileInput').click();
+});
+document.getElementById('codenameToPsychFileInput').addEventListener('change', function (e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('codenameToPsychFileLabel').textContent = file.name;
+  var reader = new FileReader();
+  reader.onload = function (ev) { document.getElementById('codenameToPsychInput').value = ev.target.result; };
+  reader.onerror = function () { setCodenameToPsychStatus('Could not read that file.', 'err'); };
+  reader.readAsText(file);
+});
+
+document.getElementById('codenameToPsychConvertBtn').addEventListener('click', function () {
+  var raw = document.getElementById('codenameToPsychInput').value.trim();
+  if (!raw) {
+    setCodenameToPsychStatus('Paste or upload a Codename chart first.', 'err');
+    return;
+  }
+  var parsed;
+  try {
+    parsed = safeJsonParse(raw);
+  } catch (err) {
+    setCodenameToPsychStatus('JSON doesn\'t parse: ' + err.message, 'err');
+    return;
+  }
+  if (!parsed.strumLines) {
+    setCodenameToPsychStatus('That doesn\'t look like a Codename chart — no "strumLines" array found.', 'err');
+    return;
+  }
+
+  var meta = {
+    songName: document.getElementById('codenameToPsychSongName').value.trim(),
+    difficulty: document.getElementById('codenameToPsychDifficulty').value.trim() || 'normal',
+    bpm: toNumber(document.getElementById('codenameToPsychBpm').value, 100),
+    stage: document.getElementById('codenameToPsychStage').value.trim()
+  };
+
+  try {
+    lastCodenameToPsychResult = convertCodenameToPsychChart(parsed, meta);
+    document.getElementById('codenameToPsychOutput').value = JSON.stringify(lastCodenameToPsychResult.psych, null, 2);
+    var warn = lastCodenameToPsychResult.nonPlayerStrumCount > 1 ? ' — heads up: ' + lastCodenameToPsychResult.nonPlayerStrumCount + ' non-player strumlines were merged onto lanes 4-7 and are no longer distinguishable.' : '';
+    setCodenameToPsychStatus('Converted ' + lastCodenameToPsychResult.noteCount + ' notes from ' + lastCodenameToPsychResult.strumLineCount + ' strumline(s).' + warn, warn ? 'err' : 'ok');
+  } catch (err) {
+    setCodenameToPsychStatus('Could not convert: ' + err.message, 'err');
+  }
+});
+
+document.getElementById('codenameToPsychCopyBtn').addEventListener('click', function () {
+  var text = document.getElementById('codenameToPsychOutput').value;
+  if (!text) return;
+  var temp = document.createElement('textarea');
+  temp.value = text;
+  document.body.appendChild(temp);
+  temp.select();
+  document.execCommand('copy');
+  document.body.removeChild(temp);
+  setCodenameToPsychStatus('Copied to clipboard.', 'ok');
+});
+
+document.getElementById('codenameToPsychDownloadBtn').addEventListener('click', function () {
+  var text = document.getElementById('codenameToPsychOutput').value;
+  if (!text) return;
+  var songSlug = (document.getElementById('codenameToPsychSongName').value.trim() || 'song').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'song';
+  var blob = new Blob([text], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = songSlug + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
 });
 
 function setCodenameCharStatus(text, kind) {
