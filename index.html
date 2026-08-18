@@ -2109,10 +2109,105 @@
   </section>
 </main>
 
+<main id="codenameToPsychCharactersPage" class="page">
+  <section class="panel">
+    <h2><span class="tag from">FROM</span> Codename Engine</h2>
+    <p class="sub">Paste or upload a Codename character XML. This maps straight to Psych's schema — no V-Slice in between — so <code>isPlayer</code> and <code>color</code> come through natively, since Psych has fields for both and V-Slice doesn't.</p>
+
+    <label class="first">Character XML (Codename)</label>
+    <div class="file-drop">
+      <span id="codenameToPsychCharFileLabel">No file selected</span>
+      <button id="codenameToPsychCharFileBtn" type="button">Upload .xml</button>
+      <input type="file" id="codenameToPsychCharFileInput" accept=".xml,text/xml">
+    </div>
+    <textarea id="codenameToPsychCharInput" placeholder="&lt;character sprite=&quot;bf&quot; ...&gt;...&lt;/character&gt;" spellcheck="false"></textarea>
+
+    <div class="field-row">
+      <div>
+        <label class="first">Image path</label>
+        <input type="text" id="codenameToPsychCharImage" placeholder="characters/bf">
+      </div>
+      <div>
+        <label class="first">Health icon</label>
+        <input type="text" id="codenameToPsychCharIcon" placeholder="bf">
+      </div>
+    </div>
+
+    <button id="codenameToPsychCharConvertBtn" type="button">Convert character</button>
+    <div id="codenameToPsychCharStatus"></div>
+  </section>
+
+  <section class="panel">
+    <h2><span class="tag to">TO</span> Psych Engine</h2>
+    <textarea id="codenameToPsychCharOutput" readonly spellcheck="false" placeholder="Converted Psych character.json will appear here."></textarea>
+    <div class="output-actions">
+      <button id="codenameToPsychCharCopyBtn" type="button">Copy</button>
+      <button id="codenameToPsychCharDownloadBtn" type="button">Download</button>
+    </div>
+
+    <div class="notes-info">
+      <strong>Field mapping</strong> — <code>isPlayer</code> becomes <code>_editor_isPlayer</code> and <code>color</code> (hex) becomes <code>healthbar_colors</code> ([r,g,b]) directly, since Psych has real fields for both — going through V-Slice first would silently drop them, since V-Slice's character schema has neither. Each <code>&lt;anim&gt;</code>'s <code>anim</code> attribute (the atlas prefix) becomes the animation entry's <code>name</code>, its own <code>name</code> becomes <code>anim</code>, <code>x</code>/<code>y</code> become <code>offsets</code>, <code>fps</code> carries over, <code>loop="true"</code> becomes <code>loop</code>. The character's own <code>y</code> (and <code>x</code>, if present) becomes <code>position</code>, <code>flipX</code> becomes <code>flip_x</code>, <code>icon</code> becomes <code>healthicon</code>.<br><br>
+      <strong>Not carried over</strong> — <code>indices</code> is always empty since Codename's animations don't carry frame-index data; <code>sing_duration</code> and <code>scale</code> have no Codename source, so they default to 4 and 1 (Psych has no field for a Codename-style singTime either, so this is a plain default, not a mapping).
+    </div>
+  </section>
+</main>
+
+<main id="codenameToPsychStagesPage" class="page">
+  <section class="panel">
+    <h2><span class="tag from">FROM</span> Codename Engine</h2>
+    <p class="sub">Paste or upload a Codename stage XML. Same z-index-from-document-order inference as the Codename &#8594; V-Slice Stages tab, generating Lua directly (reusing the same Lua builder the Charts &#8594; Psych Stages tab uses) instead of going through a V-Slice stage.json first.</p>
+
+    <label class="first">Stage XML (Codename)</label>
+    <div class="file-drop">
+      <span id="codenameToPsychStageFileLabel">No file selected</span>
+      <button id="codenameToPsychStageFileBtn" type="button">Upload .xml</button>
+      <input type="file" id="codenameToPsychStageFileInput" accept=".xml,text/xml">
+    </div>
+    <textarea id="codenameToPsychStageInput" placeholder="&lt;stage zoom=&quot;0.9&quot; ...&gt;...&lt;/stage&gt;" spellcheck="false"></textarea>
+
+    <div class="field-row">
+      <div>
+        <label class="first">Pixel stage?</label>
+        <select id="codenameToPsychStageIsPixel">
+          <option value="auto">auto-detect</option>
+          <option value="true">true</option>
+          <option value="false">false</option>
+        </select>
+      </div>
+      <div>
+        <label class="first">Camera speed</label>
+        <input type="text" id="codenameToPsychStageCameraSpeed" placeholder="1">
+      </div>
+    </div>
+
+    <button id="codenameToPsychStageConvertBtn" type="button">Convert stage</button>
+    <div id="codenameToPsychStageStatus"></div>
+  </section>
+
+  <section class="panel">
+    <div class="tabs">
+      <button id="tabCodenameToPsychStageJson" class="active" type="button">stage.json</button>
+      <button id="tabCodenameToPsychStageLua" type="button">stage.lua</button>
+    </div>
+    <div id="codenameToPsychStageOutputWrap">
+      <div class="empty-state">Convert a stage to see the output here.</div>
+    </div>
+    <div class="output-actions" id="codenameToPsychStageOutputActions" style="display:none;">
+      <button id="codenameToPsychStageCopyBtn" type="button">Copy</button>
+      <button id="codenameToPsychStageDownloadBtn" type="button">Download</button>
+    </div>
+    <div id="codenameToPsychStageDynamicNotes"></div>
+
+    <div class="notes-info">
+      Same field mapping as the V-Slice &#8594; Psych Stages tab: <code>zoom</code> becomes <code>defaultZoom</code>, character positions/camera offsets default to <code>[0, 0]</code> since Codename's <code>&lt;girlfriend/&gt;</code>/<code>&lt;dad/&gt;</code>/<code>&lt;boyfriend/&gt;</code> tags carry no position data — fill those by hand. <code>&lt;sprite&gt;</code> elements become Lua <code>makeLuaSprite</code>/<code>makeAnimatedLuaSprite</code> calls, generated straight from the parsed props without a V-Slice stage.json round-trip in between.
+    </div>
+  </section>
+</main>
+
 <main id="codenameToPsychNotBuiltPage" class="page">
   <section class="panel" style="grid-column: 1 / -1;">
     <h2>Codename &#8594; Psych</h2>
-    <p class="sub">Not built yet for this direction — only Charts is supported. Use the Charts tab above.</p>
+    <p class="sub">Not built yet for this direction — Mod Folder and Weeks aren't wired up. Use Charts, Characters, or Stages above.</p>
   </section>
 </main>
 
@@ -2848,7 +2943,7 @@ var DIR_PAGES = {
   psychReverse: ['chartsPageR', 'charactersPageR', 'stagesPageR', 'modFolderPageR', 'weeksPageR'],
   codenameForward: ['codenamePage', 'codenameCharactersPage', 'codenameStagesPage', 'codenameNotBuiltPage', 'codenameNotBuiltPage'],
   codenameReverse: ['codenamePageR', 'codenamePageR', 'codenamePageR', 'codenamePageR', 'codenamePageR'],
-  codenameToPsych: ['codenameToPsychPage', 'codenameToPsychNotBuiltPage', 'codenameToPsychNotBuiltPage', 'codenameToPsychNotBuiltPage', 'codenameToPsychNotBuiltPage']
+  codenameToPsych: ['codenameToPsychPage', 'codenameToPsychCharactersPage', 'codenameToPsychStagesPage', 'codenameToPsychNotBuiltPage', 'codenameToPsychNotBuiltPage']
 };
 var DIR_NAV_IDS = ['navDirForward', 'navDirReverse', 'navDirCodenameForward', 'navDirCodenameReverse', 'navDirCodenameToPsych'];
 var DIR_KEYS = ['psychForward', 'psychReverse', 'codenameForward', 'codenameReverse', 'codenameToPsych'];
@@ -3887,6 +3982,129 @@ function convertCodenameStage(xmlText, meta) {
     cameraZoom: isNaN(zoom) ? 1 : zoom,
     directory: 'shared'
   };
+}
+
+function hexToRgbArray(hex) {
+  if (!hex) return null;
+  var m = String(hex).replace('#', '').match(/^([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+  if (!m) return null;
+  return [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)];
+}
+
+function convertCodenameToPsychCharacter(xmlText, meta) {
+  meta = meta || {};
+  var charEl = parseCodenameXmlDoc(xmlText, 'character');
+
+  var offsetX = parseFloat(charEl.getAttribute('x')) || 0;
+  var offsetY = parseFloat(charEl.getAttribute('y')) || 0;
+  var spriteName = charEl.getAttribute('sprite') || '';
+  var flipX = charEl.getAttribute('flipX') === 'true';
+  var icon = charEl.getAttribute('icon') || '';
+  var isPlayer = charEl.getAttribute('isPlayer') === 'true';
+  var colorHex = charEl.getAttribute('color') || '';
+
+  var animEls = charEl.getElementsByTagName('anim');
+  var psychAnims = [];
+  for (var i = 0; i < animEls.length; i++) {
+    var el = animEls[i];
+    var ax = parseFloat(el.getAttribute('x'));
+    var ay = parseFloat(el.getAttribute('y'));
+    var fps = parseFloat(el.getAttribute('fps'));
+    psychAnims.push({
+      loop: el.getAttribute('loop') === 'true',
+      offsets: [isNaN(ax) ? 0 : ax, isNaN(ay) ? 0 : ay],
+      anim: el.getAttribute('name') || ('anim' + i),
+      fps: isNaN(fps) ? (meta.fps !== undefined ? meta.fps : 24) : fps,
+      name: el.getAttribute('anim') || el.getAttribute('name') || ('anim' + i),
+      indices: []
+    });
+  }
+
+  var hb = hexToRgbArray(colorHex) || (meta.hbColor || [0, 0, 0]);
+
+  return {
+    animations: psychAnims,
+    vocals_file: '',
+    no_antialiasing: false,
+    image: meta.image || ('characters/' + spriteName),
+    position: [meta.posX !== undefined ? meta.posX : offsetX, meta.posY !== undefined ? meta.posY : offsetY],
+    healthicon: meta.healthicon || icon,
+    flip_x: flipX,
+    healthbar_colors: hb,
+    sing_duration: meta.singDuration !== undefined ? meta.singDuration : 4,
+    scale: meta.scale !== undefined ? meta.scale : 1,
+    _editor_isPlayer: isPlayer
+  };
+}
+
+function convertCodenameToPsychStage(xmlText, meta) {
+  meta = meta || {};
+  var stageEl = parseCodenameXmlDoc(xmlText, 'stage');
+
+  var zoom = parseFloat(stageEl.getAttribute('zoom'));
+  var folder = stageEl.getAttribute('folder') || '';
+
+  var props = [];
+  var charZ = {};
+  var zCounter = 10;
+
+  var children = stageEl.childNodes;
+  for (var i = 0; i < children.length; i++) {
+    var node = children[i];
+    if (node.nodeType !== 1) continue;
+    var tag = node.tagName.toLowerCase();
+
+    if (tag === 'sprite') {
+      var name = node.getAttribute('name') || ('prop' + props.length);
+      var spriteName = node.getAttribute('sprite') || name;
+      var x = parseFloat(node.getAttribute('x')) || 0;
+      var y = parseFloat(node.getAttribute('y')) || 0;
+      var scroll = parseFloat(node.getAttribute('scroll'));
+      if (isNaN(scroll)) scroll = 1;
+
+      var animResult = readCodenameAnimEls(node.getElementsByTagName('anim'));
+
+      var prop = {
+        name: name,
+        assetPath: folder + spriteName,
+        position: [x, y],
+        scroll: [scroll, scroll],
+        zIndex: zCounter,
+        animations: animResult.animations
+      };
+      if (animResult.startingAnimation) prop.startingAnimation = animResult.startingAnimation;
+      props.push(prop);
+      zCounter += 10;
+    } else if (tag === 'girlfriend' || tag === 'gf') {
+      charZ.gf = zCounter; zCounter += 10;
+    } else if (tag === 'dad' || tag === 'opponent') {
+      charZ.dad = zCounter; zCounter += 10;
+    } else if (tag === 'boyfriend' || tag === 'bf') {
+      charZ.bf = zCounter; zCounter += 10;
+    }
+  }
+
+  var maxCharZ = Math.max(charZ.bf || 0, charZ.dad || 0, charZ.gf || 0);
+  var isPixel = meta.isPixel === 'true' ? true : (meta.isPixel === 'false' ? false : guessIsPixelFromProps(props));
+  var gfHidden = charZ.gf === undefined;
+
+  var out = {
+    directory: 'shared',
+    defaultZoom: isNaN(zoom) ? 1 : zoom,
+    isPixelStage: isPixel,
+    boyfriend: [0, 0],
+    girlfriend: [0, 0],
+    opponent: [0, 0],
+    hide_girlfriend: gfHidden,
+    camera_boyfriend: [0, 0],
+    camera_opponent: [0, 0],
+    camera_girlfriend: [0, 0],
+    camera_speed: meta.cameraSpeed !== undefined ? meta.cameraSpeed : 1
+  };
+
+  var luaResult = buildLuaFromProps(props, maxCharZ);
+
+  return { stage: out, lua: luaResult.text, scaleWarnings: luaResult.scaleWarnings, nonSparrowWarnings: luaResult.nonSparrowWarnings, propCount: props.length };
 }
 
 function convertPsychCharacter(psychJson, meta) {
@@ -6315,6 +6533,171 @@ document.getElementById('codenameToPsychDownloadBtn').addEventListener('click', 
   var a = document.createElement('a');
   a.href = url;
   a.download = songSlug + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+function setCodenameToPsychCharStatus(text, kind) {
+  var el = document.getElementById('codenameToPsychCharStatus');
+  el.textContent = text;
+  el.className = kind || '';
+}
+
+document.getElementById('codenameToPsychCharFileBtn').addEventListener('click', function () {
+  document.getElementById('codenameToPsychCharFileInput').click();
+});
+document.getElementById('codenameToPsychCharFileInput').addEventListener('change', function (e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('codenameToPsychCharFileLabel').textContent = file.name;
+  var reader = new FileReader();
+  reader.onload = function (ev) { document.getElementById('codenameToPsychCharInput').value = ev.target.result; };
+  reader.onerror = function () { setCodenameToPsychCharStatus('Could not read that file.', 'err'); };
+  reader.readAsText(file);
+});
+
+document.getElementById('codenameToPsychCharConvertBtn').addEventListener('click', function () {
+  var raw = document.getElementById('codenameToPsychCharInput').value.trim();
+  if (!raw) {
+    setCodenameToPsychCharStatus('Paste or upload a Codename character XML first.', 'err');
+    return;
+  }
+  var meta = {
+    image: document.getElementById('codenameToPsychCharImage').value.trim(),
+    healthicon: document.getElementById('codenameToPsychCharIcon').value.trim()
+  };
+  try {
+    var result = convertCodenameToPsychCharacter(raw, meta);
+    document.getElementById('codenameToPsychCharOutput').value = JSON.stringify(result, null, 2);
+    setCodenameToPsychCharStatus('Converted ' + result.animations.length + ' animation(s).' + (result._editor_isPlayer ? ' Marked as player.' : ''), 'ok');
+  } catch (err) {
+    setCodenameToPsychCharStatus('Could not convert: ' + err.message, 'err');
+  }
+});
+
+document.getElementById('codenameToPsychCharCopyBtn').addEventListener('click', function () {
+  var text = document.getElementById('codenameToPsychCharOutput').value;
+  if (!text) return;
+  var temp = document.createElement('textarea');
+  temp.value = text;
+  document.body.appendChild(temp);
+  temp.select();
+  document.execCommand('copy');
+  document.body.removeChild(temp);
+  setCodenameToPsychCharStatus('Copied to clipboard.', 'ok');
+});
+
+document.getElementById('codenameToPsychCharDownloadBtn').addEventListener('click', function () {
+  var text = document.getElementById('codenameToPsychCharOutput').value;
+  if (!text) return;
+  var blob = new Blob([text], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'character.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+var lastCodenameToPsychStageResult = null;
+var activeCodenameToPsychStageTab = 'json';
+
+function setCodenameToPsychStageStatus(text, kind) {
+  var el = document.getElementById('codenameToPsychStageStatus');
+  el.textContent = text;
+  el.className = kind || '';
+}
+
+function renderCodenameToPsychStageOutput() {
+  var wrap = document.getElementById('codenameToPsychStageOutputWrap');
+  var actions = document.getElementById('codenameToPsychStageOutputActions');
+
+  if (!lastCodenameToPsychStageResult) {
+    wrap.innerHTML = '<div class="empty-state">Convert a stage to see the output here.</div>';
+    actions.style.display = 'none';
+    document.getElementById('codenameToPsychStageDynamicNotes').innerHTML = '';
+    return;
+  }
+
+  wrap.innerHTML = '<textarea id="codenameToPsychStageOutputArea" readonly spellcheck="false" style="width:100%;height:380px;"></textarea>';
+  var text = activeCodenameToPsychStageTab === 'json' ? JSON.stringify(lastCodenameToPsychStageResult.stage, null, 2) : lastCodenameToPsychStageResult.lua;
+  document.getElementById('codenameToPsychStageOutputArea').value = text;
+  actions.style.display = 'flex';
+
+  var notesHtml = '';
+  if (lastCodenameToPsychStageResult.scaleWarnings.length) {
+    notesHtml += '<div class="notes-info"><strong>Scale not reproduced for</strong> — ' + lastCodenameToPsychStageResult.scaleWarnings.join(', ') + '. Add setGraphicSize calls by hand for these.</div>';
+  }
+  if (lastCodenameToPsychStageResult.nonSparrowWarnings.length) {
+    notesHtml += '<div class="notes-info"><strong>Non-sparrow props (double check these)</strong> — ' + lastCodenameToPsychStageResult.nonSparrowWarnings.join(', ') + '.</div>';
+  }
+  document.getElementById('codenameToPsychStageDynamicNotes').innerHTML = notesHtml;
+}
+
+document.getElementById('tabCodenameToPsychStageJson').addEventListener('click', function () {
+  activeCodenameToPsychStageTab = 'json';
+  document.getElementById('tabCodenameToPsychStageJson').classList.add('active');
+  document.getElementById('tabCodenameToPsychStageLua').classList.remove('active');
+  renderCodenameToPsychStageOutput();
+});
+
+document.getElementById('tabCodenameToPsychStageLua').addEventListener('click', function () {
+  activeCodenameToPsychStageTab = 'lua';
+  document.getElementById('tabCodenameToPsychStageLua').classList.add('active');
+  document.getElementById('tabCodenameToPsychStageJson').classList.remove('active');
+  renderCodenameToPsychStageOutput();
+});
+
+document.getElementById('codenameToPsychStageFileBtn').addEventListener('click', function () {
+  document.getElementById('codenameToPsychStageFileInput').click();
+});
+document.getElementById('codenameToPsychStageFileInput').addEventListener('change', function (e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('codenameToPsychStageFileLabel').textContent = file.name;
+  var reader = new FileReader();
+  reader.onload = function (ev) { document.getElementById('codenameToPsychStageInput').value = ev.target.result; };
+  reader.onerror = function () { setCodenameToPsychStageStatus('Could not read that file.', 'err'); };
+  reader.readAsText(file);
+});
+
+document.getElementById('codenameToPsychStageConvertBtn').addEventListener('click', function () {
+  var raw = document.getElementById('codenameToPsychStageInput').value.trim();
+  if (!raw) {
+    setCodenameToPsychStageStatus('Paste or upload a Codename stage XML first.', 'err');
+    return;
+  }
+  var meta = {
+    isPixel: document.getElementById('codenameToPsychStageIsPixel').value,
+    cameraSpeed: toNumber(document.getElementById('codenameToPsychStageCameraSpeed').value, 1)
+  };
+  try {
+    lastCodenameToPsychStageResult = convertCodenameToPsychStage(raw, meta);
+    setCodenameToPsychStageStatus('Converted ' + lastCodenameToPsychStageResult.propCount + ' prop(s) into Lua.' + (lastCodenameToPsychStageResult.stage.hide_girlfriend ? ' No girlfriend tag found — marked hidden.' : ''), 'ok');
+    renderCodenameToPsychStageOutput();
+  } catch (err) {
+    setCodenameToPsychStageStatus('Could not convert: ' + err.message, 'err');
+  }
+});
+
+document.getElementById('codenameToPsychStageCopyBtn').addEventListener('click', function () {
+  var area = document.getElementById('codenameToPsychStageOutputArea');
+  if (!area) return;
+  area.select();
+  document.execCommand('copy');
+  setCodenameToPsychStageStatus('Copied ' + (activeCodenameToPsychStageTab === 'json' ? 'stage.json' : 'stage.lua') + ' to clipboard.', 'ok');
+});
+
+document.getElementById('codenameToPsychStageDownloadBtn').addEventListener('click', function () {
+  if (!lastCodenameToPsychStageResult) return;
+  var isJson = activeCodenameToPsychStageTab === 'json';
+  var content = isJson ? JSON.stringify(lastCodenameToPsychStageResult.stage, null, 2) : lastCodenameToPsychStageResult.lua;
+  var filename = isJson ? 'stage.json' : 'stage.lua';
+  var blob = new Blob([content], { type: isJson ? 'application/json' : 'text/plain' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
 });
