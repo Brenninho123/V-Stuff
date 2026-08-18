@@ -39,9 +39,20 @@ function networkFormatDate(iso) {
   }
 }
 
+function getVisibleProfileName() {
+  try {
+    var visible = localStorage.getItem('vstuffProfileVisible');
+    if (visible === 'false') return '';
+    return (localStorage.getItem('vstuffProfileName') || '').trim();
+  } catch (err) {
+    return '';
+  }
+}
+
 function buildSubmitUrl() {
   var title = '';
-  var body = [
+  var authorLine = getVisibleProfileName();
+  var bodyLines = [
     '## Project',
     '',
     '(name and one-line summary)',
@@ -53,7 +64,11 @@ function buildSubmitUrl() {
     '## Links',
     '',
     '(GitHub repo, download link, itch.io page, whatever applies)'
-  ].join('\n');
+  ];
+  if (authorLine) {
+    bodyLines.push('', '## Posted by', '', authorLine);
+  }
+  var body = bodyLines.join('\n');
 
   var params = new URLSearchParams();
   params.set('title', title);
