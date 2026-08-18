@@ -52,9 +52,23 @@
 
   * { box-sizing: border-box; }
 
+  html { scroll-behavior: smooth; }
+
+  ::selection { background: var(--purple); color: #fff; }
+
+  ::-webkit-scrollbar { width: 11px; height: 11px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--surface-2); border: 2px solid var(--bg); border-radius: 8px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border); }
+  * { scrollbar-color: var(--surface-2) var(--bg); scrollbar-width: thin; }
+
   body {
     margin: 0;
-    background: var(--bg);
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(233,76,209,0.10), transparent 60%),
+      radial-gradient(ellipse 900px 500px at 85% 0%, rgba(34,195,255,0.09), transparent 60%),
+      var(--bg);
+    background-attachment: fixed;
     color: var(--text);
     font-family: 'Inter', sans-serif;
     min-height: 100vh;
@@ -322,6 +336,12 @@
     padding: 24px 48px 40px;
   }
 
+  .online-load-more-row {
+    display: flex;
+    justify-content: center;
+    padding: 0 48px 40px;
+  }
+
   .online-card {
     border: 1px solid var(--border);
     border-radius: 10px;
@@ -335,7 +355,11 @@
     transition: border-color 0.15s ease, transform 0.15s ease;
   }
 
-  .online-card:hover { border-color: var(--green); transform: translateY(-2px); }
+  .online-card:hover {
+    border-color: var(--green);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 28px rgba(47,232,143,0.18), 0 10px 28px rgba(0,0,0,0.25);
+  }
 
   .online-card-header {
     display: flex;
@@ -378,8 +402,60 @@
     font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
     color: var(--text-dim);
-    margin-top: auto;
     padding-top: 6px;
+  }
+
+  .online-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: auto;
+    gap: 8px;
+  }
+
+  .online-card-stats {
+    display: flex;
+    gap: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .online-card-stats span { display: flex; align-items: center; gap: 3px; }
+
+  .online-toolbar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+
+  .online-toolbar input {
+    flex: 1;
+    min-width: 180px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 8px 12px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+  }
+
+  .online-toolbar input:focus {
+    outline: none;
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(34,195,255,0.15);
+  }
+
+  .online-toolbar select {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 8px 12px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
   }
 
   @media (max-width: 900px) {
@@ -904,10 +980,15 @@
     grid-template-columns: 1fr 1fr;
     gap: 1px;
     background: var(--border);
+    margin: 24px 48px 48px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+    border: 1px solid var(--border);
   }
 
   @media (max-width: 900px) {
-    .page.active { grid-template-columns: 1fr; }
+    .page.active { grid-template-columns: 1fr; margin: 16px; }
 
     header { padding: 24px 20px 20px; }
     .options-gear { top: 16px; right: 16px; width: 34px; height: 34px; font-size: 15px; }
@@ -952,14 +1033,14 @@
   }
 
   .panel {
-    background: var(--bg);
-    padding: 32px 48px;
+    background: var(--surface);
+    padding: 34px 48px;
   }
 
   .panel h2 {
     font-family: 'Rajdhani', sans-serif;
     font-weight: 600;
-    font-size: 20px;
+    font-size: 21px;
     letter-spacing: 0.03em;
     margin: 0 0 4px;
     display: flex;
@@ -970,13 +1051,14 @@
   .panel h2 .tag {
     font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
-    padding: 2px 8px;
-    border-radius: 3px;
+    padding: 3px 9px;
+    border-radius: 4px;
     letter-spacing: 0.05em;
+    border: 1px solid transparent;
   }
 
-  .tag.from { background: rgba(194,75,153,0.18); color: var(--purple); }
-  .tag.to { background: rgba(53,227,74,0.18); color: var(--green); }
+  .tag.from { background: rgba(233,76,209,0.14); color: var(--purple); border-color: rgba(233,76,209,0.3); }
+  .tag.to { background: rgba(47,232,143,0.14); color: var(--green); border-color: rgba(47,232,143,0.3); }
 
   .panel .sub {
     color: var(--text-dim);
@@ -1010,6 +1092,7 @@
   textarea:focus, input[type=text]:focus {
     outline: none;
     border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(47,232,143,0.15);
   }
 
   #psychInput { height: 220px; }
@@ -1127,8 +1210,10 @@
 
   .notes-info {
     margin-top: 28px;
-    padding-top: 20px;
-    border-top: 1px solid var(--border);
+    padding: 16px 18px;
+    border-left: 3px solid var(--blue);
+    background: var(--surface-2);
+    border-radius: 0 8px 8px 0;
     font-size: 12px;
     color: var(--text-dim);
     line-height: 1.6;
@@ -2378,10 +2463,23 @@
         <button id="onlineRefreshBtn" type="button" data-i18n="onlineRefresh">Refresh</button>
         <span id="onlineStatus"></span>
       </div>
+
+      <div class="online-toolbar">
+        <input type="text" id="onlineSearchInput" data-i18n-placeholder="onlineSearchPlaceholder" placeholder="Search projects…">
+        <select id="onlineSortSelect">
+          <option value="newest" data-i18n="onlineSortNewest">Newest</option>
+          <option value="oldest" data-i18n="onlineSortOldest">Oldest</option>
+          <option value="reactions" data-i18n="onlineSortReactions">Most liked</option>
+          <option value="comments" data-i18n="onlineSortComments">Most commented</option>
+        </select>
+      </div>
     </div>
 
     <div id="onlineGrid" class="online-grid">
       <div class="empty-state" data-i18n="onlineLoading">Loading projects…</div>
+    </div>
+    <div class="online-load-more-row">
+      <button id="onlineLoadMoreBtn" type="button" style="display:none;" data-i18n="onlineLoadMore">Load more</button>
     </div>
   </section>
 </main>
@@ -2825,7 +2923,8 @@ var I18N = {
     introSkip: 'Tap to skip',
     onlineTitle: 'Community Showcase',
     onlineDesc: 'Posts here are public GitHub issues on this project\'s repo, tagged "showcase" — there\'s no separate database, so anyone can read them and anyone with a GitHub account can post one. Hit Submit to open a pre-filled issue on GitHub, fill it in, and it\'ll show up here once it\'s posted.',
-    onlineSubmit: 'Submit your project', onlineRefresh: 'Refresh', onlineLoading: 'Loading projects…',
+    onlineSubmit: 'Submit your project', onlineRefresh: 'Refresh', onlineLoading: 'Loading projects…', onlineLoadMore: 'Load more',
+    onlineSearchPlaceholder: 'Search projects…', onlineSortNewest: 'Newest', onlineSortOldest: 'Oldest', onlineSortReactions: 'Most liked', onlineSortComments: 'Most commented',
     optionsAccount: 'Account (optional)', optionsGoogleUnconfigured: "Google sign-in isn't set up on this deployment yet.", optionsSignOut: 'Sign out',
     optionsProfile: 'Your profile', optionsProfileDesc: "Optional — just a display name for this browser, stored locally. It's never sent anywhere on its own.",
     optionsProfileNamePlaceholder: 'Display name', optionsProfileVisible: 'Show my name when I submit a project to Online',
@@ -2842,7 +2941,8 @@ var I18N = {
     introSkip: 'Toque para pular',
     onlineTitle: 'Vitrine da Comunidade',
     onlineDesc: 'Os posts aqui são issues públicas no repositório do projeto no GitHub, marcadas com "showcase" — não tem banco de dados separado, então qualquer um pode ler e qualquer um com conta no GitHub pode postar. Clique em Enviar pra abrir uma issue pré-preenchida no GitHub, preencha, e ela aparece aqui depois de postada.',
-    onlineSubmit: 'Envie seu projeto', onlineRefresh: 'Atualizar', onlineLoading: 'Carregando projetos…',
+    onlineSubmit: 'Envie seu projeto', onlineRefresh: 'Atualizar', onlineLoading: 'Carregando projetos…', onlineLoadMore: 'Carregar mais',
+    onlineSearchPlaceholder: 'Buscar projetos…', onlineSortNewest: 'Mais recentes', onlineSortOldest: 'Mais antigos', onlineSortReactions: 'Mais curtidos', onlineSortComments: 'Mais comentados',
     optionsAccount: 'Conta (opcional)', optionsGoogleUnconfigured: 'O login com Google ainda não foi configurado neste site.', optionsSignOut: 'Sair',
     optionsProfile: 'Seu perfil', optionsProfileDesc: 'Opcional — só um nome de exibição pra esse navegador, guardado localmente. Nunca é enviado pra lugar nenhum sozinho.',
     optionsProfileNamePlaceholder: 'Nome de exibição', optionsProfileVisible: 'Mostrar meu nome quando eu enviar um projeto pro Online',
