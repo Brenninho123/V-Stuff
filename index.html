@@ -46,7 +46,7 @@
     --red: #e11d48;
   }
 
-  body, .panel, .options-panel, .notes-info, .editor-controls, textarea, input, select, .online-card, .app-nav, .dir-nav, .page-nav {
+  body, .panel, .options-panel, .notes-info, .editor-controls, textarea, input, select, .online-card, .app-nav, .engine-picker, .page-nav {
     transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
   }
 
@@ -906,36 +906,71 @@
     border-radius: 2px;
   }
 
-  .dir-nav {
+  .engine-picker {
     display: flex;
-    gap: 10px;
+    align-items: flex-end;
+    gap: 16px;
     padding: 28px 48px 0;
+    flex-wrap: wrap;
   }
 
-  .dir-nav button {
+  .engine-picker-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .engine-picker-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .engine-picker-buttons {
+    display: flex;
+    gap: 8px;
+  }
+
+  .engine-picker-arrow {
+    color: var(--text-dim);
+    font-size: 20px;
+    padding-bottom: 9px;
+  }
+
+  .engine-btn {
     font-family: 'Rajdhani', sans-serif;
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 700;
     letter-spacing: 0.02em;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 12px 22px;
+    padding: 10px 20px;
     color: var(--text-dim);
-    flex: 1;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
   }
 
-  .dir-nav button.active {
+  .engine-btn.active {
     color: var(--bg);
     border-color: transparent;
     background: linear-gradient(90deg, var(--purple), var(--blue), var(--green), var(--red));
     box-shadow: 0 6px 20px rgba(233,76,209,0.28), 0 6px 20px rgba(34,195,255,0.2);
   }
 
-  .dir-nav button:not(.active):hover {
+  .engine-btn:not(.active):hover {
     color: var(--text);
     background: var(--surface-2);
+  }
+
+  .engine-btn-logo {
+    height: 22px;
+    width: auto;
+    display: block;
   }
 
   .page-nav {
@@ -1001,8 +1036,9 @@
     .app-nav { padding: 0 20px; overflow-x: auto; }
     .app-nav button { margin-right: 20px; white-space: nowrap; }
 
-    .dir-nav { padding: 20px 16px 0; gap: 8px; }
-    .dir-nav button { font-size: 14px; padding: 10px 8px; }
+    .engine-picker { padding: 20px 16px 0; gap: 10px; }
+    .engine-btn { font-size: 14px; padding: 9px 14px; min-height: 40px; }
+    .engine-btn-logo { height: 18px; }
 
     .page-nav { padding: 16px 16px 0; gap: 6px; overflow-x: auto; flex-wrap: nowrap; }
     .page-nav button { padding: 9px 14px; font-size: 13px; white-space: nowrap; flex: none; }
@@ -1311,12 +1347,24 @@
 
 <div id="generatorApp">
 
-<nav class="dir-nav">
-  <button id="navDirForward" class="active" type="button">Psych &#8594; V-Slice</button>
-  <button id="navDirReverse" type="button">V-Slice &#8594; Psych</button>
-  <button id="navDirCodenameForward" type="button">Codename &#8594; V-Slice</button>
-  <button id="navDirCodenameReverse" type="button">V-Slice &#8594; Codename</button>
-  <button id="navDirCodenameToPsych" type="button">Codename &#8594; Psych</button>
+<nav class="engine-picker">
+  <div class="engine-picker-group">
+    <span class="engine-picker-label" data-i18n="convertFrom">Convert from</span>
+    <div class="engine-picker-buttons" id="engineFromButtons">
+      <button type="button" class="engine-btn" data-engine="vslice"><img src="ui/funkin.png" alt="V-Slice" class="engine-btn-logo" onerror="this.replaceWith('V-Slice')"></button>
+      <button type="button" class="engine-btn active" data-engine="psych">Psych</button>
+      <button type="button" class="engine-btn" data-engine="codename">Codename</button>
+    </div>
+  </div>
+  <span class="engine-picker-arrow">&#8594;</span>
+  <div class="engine-picker-group">
+    <span class="engine-picker-label" data-i18n="convertTo">Convert to</span>
+    <div class="engine-picker-buttons" id="engineToButtons">
+      <button type="button" class="engine-btn active" data-engine="vslice"><img src="ui/funkin.png" alt="V-Slice" class="engine-btn-logo" onerror="this.replaceWith('V-Slice')"></button>
+      <button type="button" class="engine-btn" data-engine="psych">Psych</button>
+      <button type="button" class="engine-btn" data-engine="codename">Codename</button>
+    </div>
+  </div>
 </nav>
 
 <nav class="page-nav">
@@ -2211,6 +2259,20 @@
   </section>
 </main>
 
+<main id="universalNotBuiltPage" class="page">
+  <section class="panel" style="grid-column: 1 / -1;">
+    <h2 id="universalNotBuiltTitle">Not built yet</h2>
+    <p class="sub">This direction doesn't have a converter yet. Currently built: Psych &#8596; V-Slice (all 5 tabs), Codename &#8594; V-Slice (Charts/Characters/Stages), and Codename &#8594; Psych (Charts/Characters/Stages).</p>
+  </section>
+</main>
+
+<main id="sameEngineNoticePage" class="page">
+  <section class="panel" style="grid-column: 1 / -1;">
+    <h2>Pick two different engines</h2>
+    <p class="sub">"Convert from" and "convert to" are set to the same engine right now — pick two different ones above to see a converter.</p>
+  </section>
+</main>
+
 </div>
 
 <div id="editorApp" style="display:none;">
@@ -2938,41 +3000,82 @@ document.getElementById('downloadBtn').addEventListener('click', function () {
   URL.revokeObjectURL(url);
 });
 
-var DIR_PAGES = {
-  psychForward: ['chartsPage', 'charactersPage', 'stagesPage', 'modFolderPage', 'weeksPage'],
-  psychReverse: ['chartsPageR', 'charactersPageR', 'stagesPageR', 'modFolderPageR', 'weeksPageR'],
-  codenameForward: ['codenamePage', 'codenameCharactersPage', 'codenameStagesPage', 'codenameNotBuiltPage', 'codenameNotBuiltPage'],
-  codenameReverse: ['codenamePageR', 'codenamePageR', 'codenamePageR', 'codenamePageR', 'codenamePageR'],
-  codenameToPsych: ['codenameToPsychPage', 'codenameToPsychCharactersPage', 'codenameToPsychStagesPage', 'codenameToPsychNotBuiltPage', 'codenameToPsychNotBuiltPage']
+var ENGINE_LABELS = { vslice: 'V-Slice', psych: 'Psych', codename: 'Codename' };
+
+var DIRECTION_MATRIX = {
+  psych: {
+    vslice: ['chartsPage', 'charactersPage', 'stagesPage', 'modFolderPage', 'weeksPage'],
+    codename: ['universalNotBuiltPage', 'universalNotBuiltPage', 'universalNotBuiltPage', 'universalNotBuiltPage', 'universalNotBuiltPage']
+  },
+  vslice: {
+    psych: ['chartsPageR', 'charactersPageR', 'stagesPageR', 'modFolderPageR', 'weeksPageR'],
+    codename: ['codenamePageR', 'codenamePageR', 'codenamePageR', 'codenamePageR', 'codenamePageR']
+  },
+  codename: {
+    vslice: ['codenamePage', 'codenameCharactersPage', 'codenameStagesPage', 'codenameNotBuiltPage', 'codenameNotBuiltPage'],
+    psych: ['codenameToPsychPage', 'codenameToPsychCharactersPage', 'codenameToPsychStagesPage', 'codenameToPsychNotBuiltPage', 'codenameToPsychNotBuiltPage']
+  }
 };
-var DIR_NAV_IDS = ['navDirForward', 'navDirReverse', 'navDirCodenameForward', 'navDirCodenameReverse', 'navDirCodenameToPsych'];
-var DIR_KEYS = ['psychForward', 'psychReverse', 'codenameForward', 'codenameReverse', 'codenameToPsych'];
+
 var PAGE_NAV_IDS = ['navCharts', 'navCharacters', 'navStages', 'navModFolder', 'navWeeks'];
-var currentDir = 'psychForward';
+var currentFrom = 'psych';
+var currentTo = 'vslice';
 var currentTool = 0;
 
+function getCurrentPages() {
+  if (currentFrom === currentTo) return null;
+  var row = DIRECTION_MATRIX[currentFrom];
+  return row ? row[currentTo] : null;
+}
+
 function showPage() {
-  var allPageIds = {};
-  DIR_KEYS.forEach(function (dir) {
-    DIR_PAGES[dir].forEach(function (id) { allPageIds[id] = true; });
+  var allPageIds = { universalNotBuiltPage: true, sameEngineNoticePage: true };
+  Object.keys(DIRECTION_MATRIX).forEach(function (from) {
+    Object.keys(DIRECTION_MATRIX[from]).forEach(function (to) {
+      DIRECTION_MATRIX[from][to].forEach(function (id) { allPageIds[id] = true; });
+    });
   });
   Object.keys(allPageIds).forEach(function (id) {
-    document.getElementById(id).classList.remove('active');
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('active');
   });
-  document.getElementById(DIR_PAGES[currentDir][currentTool]).classList.add('active');
+
+  var pages = getCurrentPages();
+  if (!pages) {
+    document.getElementById('sameEngineNoticePage').classList.add('active');
+  } else {
+    document.getElementById(pages[currentTool]).classList.add('active');
+  }
 
   PAGE_NAV_IDS.forEach(function (id, i) {
     document.getElementById(id).classList.toggle('active', currentTool === i);
   });
 
-  DIR_NAV_IDS.forEach(function (id, i) {
-    document.getElementById(id).classList.toggle('active', currentDir === DIR_KEYS[i]);
+  ['engineFromButtons', 'engineToButtons'].forEach(function (groupId) {
+    var isFrom = groupId === 'engineFromButtons';
+    var current = isFrom ? currentFrom : currentTo;
+    var buttons = document.getElementById(groupId).querySelectorAll('.engine-btn');
+    for (var i = 0; i < buttons.length; i++) {
+      buttons[i].classList.toggle('active', buttons[i].getAttribute('data-engine') === current);
+    }
   });
 }
 
-DIR_NAV_IDS.forEach(function (id, i) {
-  document.getElementById(id).addEventListener('click', function () { currentDir = DIR_KEYS[i]; showPage(); });
-});
+function setupEnginePicker(groupId, isFrom) {
+  var buttons = document.getElementById(groupId).querySelectorAll('.engine-btn');
+  for (var i = 0; i < buttons.length; i++) {
+    buttons[i].addEventListener('click', function (ev) {
+      var engine = ev.currentTarget.getAttribute('data-engine');
+      if (isFrom) currentFrom = engine; else currentTo = engine;
+      currentTool = 0;
+      showPage();
+    });
+  }
+}
+
+setupEnginePicker('engineFromButtons', true);
+setupEnginePicker('engineToButtons', false);
+
 PAGE_NAV_IDS.forEach(function (id, i) {
   document.getElementById(id).addEventListener('click', function () { currentTool = i; showPage(); });
 });
@@ -3013,6 +3116,7 @@ var I18N = {
     headerDesc: "Converts a Psych Engine chart into the V-Slice chart and metadata format. Paste or upload a chart, fill in what Psych doesn't store, and get both output files.",
     installApp: 'Install app',
     navGenerator: 'Generator', navEditor: 'Editor', navOnline: 'Online',
+    convertFrom: 'Convert from', convertTo: 'Convert to',
     navCharts: 'Charts', navCharacters: 'Characters', navStages: 'Stages', navModFolder: 'Mod Folder', navWeeks: 'Weeks',
     navEditorChart: 'Chart Editor', navEditorCharacter: 'Character Editor', navEditorStage: 'Stage Editor', navEditorWeek: 'Week Editor',
     introSkip: 'Tap to skip',
@@ -3031,6 +3135,7 @@ var I18N = {
     headerDesc: 'Converte um chart do Psych Engine para o formato de chart e metadata do V-Slice. Cole ou envie um chart, preencha o que o Psych não guarda, e baixe os dois arquivos.',
     installApp: 'Instalar app',
     navGenerator: 'Gerador', navEditor: 'Editor', navOnline: 'Online',
+    convertFrom: 'Converter de', convertTo: 'Converter para',
     navCharts: 'Charts', navCharacters: 'Personagens', navStages: 'Stages', navModFolder: 'Pasta do Mod', navWeeks: 'Weeks',
     navEditorChart: 'Editor de Chart', navEditorCharacter: 'Editor de Personagem', navEditorStage: 'Editor de Stage', navEditorWeek: 'Editor de Week',
     introSkip: 'Toque para pular',
