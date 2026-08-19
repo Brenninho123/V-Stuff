@@ -2646,6 +2646,7 @@
 </main>
 </div>
 
+<script src="src/audio/WebSound.js"></script>
 <script src="network.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="login.js"></script>
@@ -3180,36 +3181,23 @@ document.getElementById('themeMoonBtn').addEventListener('click', function () { 
 
 applyTheme();
 
-var uiClickSound = null;
-var uiSoundMuted = false;
-try {
-  uiSoundMuted = localStorage.getItem('vstuffUiSoundMuted') === 'true';
-} catch (err) {}
-document.getElementById('uiSoundToggle').checked = !uiSoundMuted;
-
-function playUiClickSound() {
-  if (uiSoundMuted) return;
-  try {
-    if (!uiClickSound) uiClickSound = new Audio('ui/sounds/scrollMenu.ogg');
-    uiClickSound.currentTime = 0;
-    var playPromise = uiClickSound.play();
-    if (playPromise && playPromise.catch) playPromise.catch(function () {});
-  } catch (err) {}
-}
+WebSound.load('click', 'ui/sounds/scrollMenu.ogg');
+WebSound.setMuted(localStorage.getItem('vstuffUiSoundMuted') === 'true');
+document.getElementById('uiSoundToggle').checked = !WebSound.isMuted();
 
 document.getElementById('uiSoundToggle').addEventListener('change', function () {
-  uiSoundMuted = !this.checked;
-  try { localStorage.setItem('vstuffUiSoundMuted', uiSoundMuted ? 'true' : 'false'); } catch (err) {}
+  WebSound.setMuted(!this.checked);
+  try { localStorage.setItem('vstuffUiSoundMuted', WebSound.isMuted() ? 'true' : 'false'); } catch (err) {}
 });
 
 document.addEventListener('click', function (ev) {
   if (ev.target.closest && ev.target.closest('button, .online-card, input[type="checkbox"], input[type="radio"]')) {
-    playUiClickSound();
+    WebSound.play('click');
   }
 });
 
 document.addEventListener('change', function (ev) {
-  if (ev.target.tagName === 'SELECT') playUiClickSound();
+  if (ev.target.tagName === 'SELECT') WebSound.play('click');
 });
 
 function loadProfile() {
