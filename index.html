@@ -3192,12 +3192,12 @@ document.getElementById('uiSoundToggle').addEventListener('change', function () 
 
 document.addEventListener('click', function (ev) {
   if (ev.target.closest && ev.target.closest('button, .online-card, input[type="checkbox"], input[type="radio"]')) {
-    WebSound.play('click');
+    WebSound.play('click', { overlap: true });
   }
 });
 
 document.addEventListener('change', function (ev) {
-  if (ev.target.tagName === 'SELECT') WebSound.play('click');
+  if (ev.target.tagName === 'SELECT') WebSound.play('click', { overlap: true });
 });
 
 function loadProfile() {
